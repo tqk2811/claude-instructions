@@ -4,6 +4,7 @@
 # Except these
 !/.gitignore
 !/*.md
+!/Experiences/
 
 # Local-only notes (paths, private names)
 /local.md
