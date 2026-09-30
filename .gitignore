@@ -1,0 +1,9 @@
+# Ignore everything at root
+/*
+
+# Except these
+!/.gitignore
+!/*.md
+
+# Local-only notes (paths, private names)
+/local.md
