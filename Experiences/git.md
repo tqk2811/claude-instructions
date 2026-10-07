@@ -271,3 +271,4 @@ Xử lý: `git config core.longpaths true` (chỉ trong bản clone) rồi `git 
 - **How to apply:** khi user giao kiểu "clone ra chỗ khác rồi xoá", báo trước là bước xoá có thể cần
   user bấm duyệt hoặc tự chạy `Remove-Item -Recurse -Force <dir>`. Bị chặn thì đưa lệnh cho user
   ngay, đừng thử lại nhiều lần.
+- **Agent `isolation: "worktree"` tạo worktree từ repo của THƯ MỤC LÀM VIỆC HIỆN TẠI của phiên, không phải repo đang làm.** Phiên đang đứng ở thư mục khác (vd thư mục memory trong `~/.claude`) thì agent nhận worktree của repo `~/.claude`, không có code, và bị harness chặn chạy git sang repo thật ⇒ agent báo BLOCKED, mất một lượt. Ngoài ra worktree tạo ra có thể nằm ở commit cũ chứ không phải HEAD nhánh đang làm. Cách làm chắc: tự tạo worktree trước (`git worktree add -b <nhánh> <repo>/.claude/worktrees/<tên> <nhánh gốc>`, chép `Directory.Build.rsp` nếu có), rồi giao agent KHÔNG bật isolation, kèm đường dẫn worktree tuyệt đối và dặn chỉ làm trong đó.

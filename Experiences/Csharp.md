@@ -1189,3 +1189,8 @@ Ví dụ dính bẫy: gán `StartupUri = null` trong `OnStartup` để chặn t�
   - Detach một hàng cha thì EF **gỡ lan** xuống mọi hàng con có quan hệ cascade, kể cả con Unchanged, và lan tiếp theo chuỗi. Tập hàng cần dọn khỏi collection phải đọc lại `State == Detached` SAU khi gỡ, đừng dùng danh sách chụp trước.
 - Tắt `ChangeTracker.AutoDetectChangesEnabled` trong lúc dọn: `Entries()` chạy DetectChanges, mà nếu chính DetectChanges là thứ vừa ném thì catch ném lần nữa và thay mất lỗi gốc.
 - Test không cần DB: `UseNpgsql("Host=127.0.0.1;Port=1;Timeout=1")` — lượt lưu hỏng thật ở tầng mạng, rồi assert State/collection.
+
+## `new IPAddress(long)` đọc số theo thứ tự byte của máy, không phải network order
+- `new IPAddress(0x00000001)` trên máy little-endian (mọi máy x86/ARM thường gặp) cho ra **1.0.0.0**, không phải 0.0.0.1: byte thấp của `long` thành octet đầu.
+- Gặp thật (2026-10-03): marker SOCKS4a "0.0.0.x" dựng bằng `new IPAddress(1L)` thành 1.0.0.0, nên mã kiểm "có phải 4a không" luôn trả false, tên miền không bao giờ được gửi, và mọi CONNECT đi tới 1.0.0.0. Không ném lỗi, chỉ kết nối hỏng.
+- Cách đúng: dựng từ mảng byte, `new IPAddress(new byte[] { 0, 0, 0, 1 })`, hoặc `IPAddress.Parse("0.0.0.1")`.

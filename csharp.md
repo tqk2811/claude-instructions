@@ -5,7 +5,9 @@
   ```
   -maxCpuCount:2
   -nodeReuse:false
+  -p:UseSharedCompilation=false
   ```
+  Dòng cuối tắt server biên dịch dùng chung (`VBCSCompiler.exe`): không có nó, server này ở lại chạy ngầm sau build và ăn nhiều CPU mỗi lần build lại. Đổi lại build chậm hơn một chút.
 
 ## Ưu tiên hướng đối tượng (OOP) hết mức có thể — hạn chế `static`
 
@@ -33,6 +35,8 @@
 ## `Directory.Build.rsp` là cấu hình build CỤC BỘ của máy — KHÔNG commit
 - File `Directory.Build.rsp` ở gốc repo là MSBuild response file, msbuild/dotnet tự nạp mỗi lần build; thường chứa tinh chỉnh riêng của máy như `-maxCpuCount:2`, `-nodeReuse:false`. Commit vào repo sẽ ÉP mọi máy khác build theo cấu hình đó (vd giới hạn CPU) — không mong muốn.
 - Xử lý: thêm `Directory.Build.rsp` vào `.gitignore`; nếu lỡ `git add -A` thì `git restore --staged Directory.Build.rsp` trước khi commit. ĐỪNG nhầm với `Directory.Build.props`/`Directory.Build.targets` (2 file này LÀ cấu hình dự án dùng chung, PHẢI commit).
+- Hệ quả: `git clone`/`git worktree add` sang thư mục mới sẽ KHÔNG có file này. Tạo clone/worktree để build hoặc giao agent build thì chép ngay `Directory.Build.rsp` từ repo gốc sang đúng vị trí tương ứng (cạnh .sln). Build xong mà còn `VBCSCompiler.exe` chạy ngầm thì kill nó.
+  - **Why**: agent build trong clone thiếu file này làm .NET chiếm nhiều CPU, user phải tự phát hiện.
 
 ## Ẩn đường dẫn build cho bản Release
 

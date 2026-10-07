@@ -23,6 +23,8 @@
     + Tag dùng full SemVer `vX.Y.Z` (đọc `~/.claude/gitversion.md` để biết pattern version).
     + Tag cho một TÍNH NĂNG MỚI: gắn vào **commit ĐẦU TIÊN của tính năng** (thường là commit `feat`), KHÔNG gắn vào commit cuối (test/docs). Lý do theo pattern GitVersion `Major.Minor.<commits-since-tag>`: pack tại đúng commit đó ra `X.Y.0`, các commit test/docs phía sau thành patch tăng dần (`X.Y.1`, `X.Y.2`...).
     + Tag là local cho tới khi push riêng: `git push origin <tag>`; `git push <branch>` KHÔNG tự đẩy tag.
+- **Repo mới tạo (`git init`, `gh repo create`) luôn dùng nhánh chính tên `master`**, không dùng `main`: `git init -b master`. Tạo repo GitHub từ thư mục local (`gh repo create --source . --push`) thì đẩy nhánh `master` lên để nó thành nhánh mặc định.
+    + **Why**: user thống nhất tên nhánh chính là `master` cho mọi repo; tạo nhầm `main` thì phải đổi tên cả local lẫn remote và đổi nhánh mặc định trên GitHub.
 - **KHÔNG BAO GIỜ tự đổi identity git của user** (`user.name` / `user.email`), dù ở `--global`, `--local` hay qua `-c user.email=...`. Chỉ đổi khi user yêu cầu RÕ RÀNG và nói rõ giá trị mới.
     + Máy user đã có sẵn identity đúng trong `~/.gitconfig`. Repo mới `git init` tự kế thừa global — KHÔNG cần và KHÔNG được set lại ở local.
     + **Email trong context phiên (`userEmail`) KHÔNG phải identity commit.** Nó chỉ để nhận diện user, đừng đem đi `git config`; ghi đè global đúng bằng nó là làm sai tác giả commit.
