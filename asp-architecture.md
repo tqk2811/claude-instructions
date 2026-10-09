@@ -31,7 +31,7 @@ Ba file đi kèm, KHÔNG lặp lại nội dung của nhau: bẫy Razor/AJAX ở
     ├── Directory.Packages.props      # Central Package Management: MỌI version NuGet khai ở đây, csproj KHÔNG ghi Version
     ├── Directory.Build.rsp           # -maxCpuCount:2 -nodeReuse:false — CỤC BỘ máy, .gitignore, KHÔNG commit
     ├── ProjectBuildProperties.targets# LangVersion/Nullable/ImplicitUsings/PathMap — mỗi csproj <Import> TƯỜNG MINH, KHÔNG đặt TargetFramework ở đây
-    ├── shared/                       # dùng chung nhiều ứng dụng trong repo (Contracts, *.Core)
+    ├── shared/                       # dùng chung nhiều ứng dụng trong repo (Shared, *.Core)
     ├── <app>/                        # mỗi ứng dụng một thư mục (vd central/, node/)
     │   └── tests/
     └── tools/
@@ -56,22 +56,23 @@ Cây tầng của MỘT ứng dụng (đọc từ dưới lên = từ không ph�
 
 | Project | Chứa gì | Được tham chiếu | CẤM tham chiếu |
 |---|---|---|---|
-| `<P>.Contracts` (shared) | enum + attribute mã dây, hằng quyền/claim, `ApiError`/`ApiResponse<T>`/`PagedResult<T>`, `<P>JsonSettings`, prompt/resource nhúng | Newtonsoft | mọi thứ khác |
-| `<P>.ViewModels` | VM request/response (`record`), thư mục theo feature | Contracts, Newtonsoft (chỉ để `[JsonProperty]`) | Entities, EF, Services |
-| `<P>.Database.Entities` | POCO `*Dbo` thuần, `[MaxLength]` trên property | Contracts (chỉ enum/hằng) | **KHÔNG PackageReference nào**, không EF |
+| `<P>.Shared` (shared) | enum CHỈ đi trên dây (enum vừa lưu DB vừa lên dây thì ở `Database.Enums`), hằng quyền/claim, `ApiError`/`ApiResponse<T>`/`PagedResult<T>`, `<P>JsonSettings`, prompt/resource nhúng | Newtonsoft | mọi thứ khác |
+| `<P>.Database.Enums` (shared) | enum có giá trị LƯU trong DB (+ attribute mã dây, converter Newtonsoft của chính chúng). Sửa cẩn trọng: DB lưu theo tên/mã member, đổi tên hay xoá member phải kèm migration cập nhật dữ liệu cũ; nên có test snapshot tên member | Newtonsoft | mọi thứ khác — project lá nằm trong solution folder shared (KHÔNG thuộc tầng database dù tên có `Database.`); MỌI project được tham chiếu TRỰC TIẾP kể cả khi cột "Được tham chiếu" của nó không liệt kê |
+| `<P>.ViewModels` | VM request/response (`record`), thư mục theo feature | Shared, Database.Enums, Newtonsoft (chỉ để `[JsonProperty]`) | Entities, EF, Services |
+| `<P>.Database.Entities` | POCO `*Dbo` thuần, `[MaxLength]` trên property | Database.Enums, Shared (chỉ hằng) | **KHÔNG PackageReference nào**, không EF |
 | `<P>.Database.<Provider>` (`PostgreSql`, `SqlServer`) | `EF/<Name>DbContext.cs`, `EF/<Name>DbContextFactory.cs`, `Configurations/*Configuration.cs`, `Migrations/`, `EF/<Provider>SchemaInitializer.cs`, `Extensions/<Name>DataSeeder.cs`, `efdesign.json` | Entities, EF + provider, Configuration.Json (design-time) | Services, Repositories |
-| `<P>.Repositories.Abstractions` | `Interfaces/I*Repository.cs`, `Models/` (kiểu nội bộ không được lọt ra API, xem 4.3) | ViewModels, Contracts | **Entities** (Dbo không có mặt trong chữ ký), **KHÔNG EF**, không `IQueryable`/`DbSet` trong chữ ký |
+| `<P>.Repositories.Abstractions` | `Interfaces/I*Repository.cs`, `Models/` (kiểu nội bộ không được lọt ra API, xem 4.3) | ViewModels, Shared | **Entities** (Dbo không có mặt trong chữ ký), **KHÔNG EF**, không `IQueryable`/`DbSet` trong chữ ký |
 | `<P>.Repositories` | `*Repository.cs` cài đặt EF, `Mappings/<X>Mapping.cs` (Dbo ↔ RecordVM), helper truy vấn dùng chung (`DocumentPurge`) | Repositories.Abstractions, Database.<Provider> (qua đó thấy Entities) | Services |
-| `<P>.Services.Abstractions` | interface dùng XUYÊN feature + model/enum của chúng (`ITokenService`, `IChatTool`, `DocumentIngestRequest`) | ViewModels, Contracts | Repositories, Database, **Entities** |
+| `<P>.Services.Abstractions` | interface dùng XUYÊN feature + model/enum của chúng (`ITokenService`, `IChatTool`, `DocumentIngestRequest`) | ViewModels, Shared | Repositories, Database.<Provider>, **Entities** |
 | `<P>.Services.Common` | đáy cây service: luật nghiệp vụ dùng chung (`Rules/`), lỗi (`Common/Errors/`), helper, client Central | Services.Abstractions, Repositories.Abstractions, Integration.* | **KHÔNG tham chiếu ngược feature nào**, **Entities** |
-| `<P>.Services.<Feature>` | một project mỗi nhóm nghiệp vụ (Auth, Product, Documents, Chat…) | Services.Common, Services.Abstractions, Repositories.Abstractions, ViewModels, Contracts | **`<P>.Repositories`, `<P>.Database.<Provider>`, `<P>.Database.Entities`** (DbContext và Dbo không tồn tại ở đây để dùng nhầm) |
+| `<P>.Services.<Feature>` | một project mỗi nhóm nghiệp vụ (Auth, Product, Documents, Chat…) | Services.Common, Services.Abstractions, Repositories.Abstractions, ViewModels, Shared | **`<P>.Repositories`, `<P>.Database.<Provider>`, `<P>.Database.Entities`** (DbContext và Dbo không tồn tại ở đây để dùng nhầm) |
 | `<P>.Services` (facade) | `AppServiceCollectionExtensions.AddApplicationServices()` gom mọi feature | mọi Services.<Feature> | — |
 | `<P>.BackgroundServices` | MỌI hosted service (`BackgroundService`/`IHostedService`) của tiến trình Api, kể cả tiện ích chỉ-Debug; file phẳng ở gốc project, namespace = tên project. **Không có** `Add…Services()` ở đây — host tự gọi `AddHostedService<>` (xem 4.5) | Services (facade — qua đó thấy luôn `Repositories.Abstractions`), `Microsoft.Extensions.Hosting.Abstractions` | `<P>.Repositories` (bản EF), Database.<Provider>, host Api |
-| `<P>.Integration.Api` | client typed của chính API này: `Interfaces/I<App>Api.cs`, `Interfaces/I<Group>Controller.cs`, `Implements/<App>ApiImplement*.cs`, `Extensions/ServiceCollectionExtensions.cs` | ViewModels, Contracts, Integration.Core | Services, Entities |
+| `<P>.Integration.Api` | client typed của chính API này: `Interfaces/I<App>Api.cs`, `Interfaces/I<Group>Controller.cs`, `Implements/<App>ApiImplement*.cs`, `Extensions/ServiceCollectionExtensions.cs` | ViewModels, Shared, Integration.Core | Services, Entities |
 | `<P>.Api` (host) | `Controllers/`, `Middleware/`, `Extensions/` (DI), `Infrastructure/`, `Program.cs` | Services, **BackgroundServices**, **Repositories** (bản EF, để đăng ký DI), Integration.Api (controller implement interface), Api.Core | — |
-| `<P>.Web` (host Razor Pages) | `Pages/`, `Infrastructure/`, `wwwroot/` | **CHỈ** Integration.Api + ViewModels + Contracts (+ Resources) | **Services, Repositories, Database, Entities** — Web không đụng database |
+| `<P>.Web` (host Razor Pages) | `Pages/`, `Infrastructure/`, `wwwroot/` | **CHỈ** Integration.Api + ViewModels + Shared + Database.Enums (+ Resources) | **Services, Repositories, Database.<Provider>, Database.Entities** — Web không đụng database (`Database.Enums` là ngoại lệ: chỉ là định nghĩa enum) |
 | `<P>.Resources` | i18n: `Resources/<Group>Resource.cs` + `.vi.json`/`.en.json`, `ILocalizerService`, `JsonLocalizerWarmup`, `<P>Cultures` | Askmethat.Aspnet.JsonLocalizer | — |
-| `<P>.Api.Core` / `<P>.Integration.Core` / `<P>.Auth.Core` (shared) | filter/model binder/`ApiErrorException`; `<P>ApiBase` + bóc vỏ `ApiResponse`; mail/TOTP/thiết bị | Contracts; `FrameworkReference Microsoft.AspNetCore.App` (KHÔNG Sdk.Web) | — |
+| `<P>.Api.Core` / `<P>.Integration.Core` / `<P>.Auth.Core` (shared) | filter/model binder/`ApiErrorException`; `<P>ApiBase` + bóc vỏ `ApiResponse`; mail/TOTP/thiết bị | Shared; `FrameworkReference Microsoft.AspNetCore.App` (KHÔNG Sdk.Web) | — |
 | `tests/<P>.Testing` | fake dùng chung: `Fakes/InMemory<App>Db.cs`, `Fakes/Repositories/InMemory*Repository.cs`, `Fakes/Services/Fake*.cs` | Repositories.Abstractions, Services (facade), Entities (fake giữ hàng dạng Dbo bên trong và map ra RecordVM y như bản thật, chép nguồn `Mappings/` của Repositories vào) | **`<P>.Repositories`, EF** (fake THAY THẾ tầng đó) |
 | `tests/<P>.Tests` | xunit, thư mục theo tầng (`Services/Db`, `Services/Ai`, `Database`, `Web`, `Tools/<Feature>`) | Testing, Services, BackgroundServices, Repositories, Web | — |
 
@@ -140,7 +141,7 @@ public sealed class ProductDbo
   ô nhập; **Configuration KHÔNG gọi `HasMaxLength`** nữa, không thì hai nơi lệch. Trần riêng của ô nhập
   ngắn hơn cột thì dùng attribute riêng (`[InputMaxLength]`).
 - Không logic nghiệp vụ trong entity (một `GetUri()` thuần tính toán thì được).
-- Trạng thái dùng enum ở `Contracts`; nếu lưu chuỗi mã dây thì `HasConversion` ở Configuration.
+- Trạng thái dùng enum ở `Database.Enums` (enum lưu DB tách khỏi `Shared`, xem bảng tầng); nếu lưu chuỗi mã dây thì `HasConversion` ở Configuration.
 
 ### 4.2 Configuration, DbContext, migration (`<P>.Database.<Provider>`)
 
@@ -213,7 +214,7 @@ public sealed class ProductRepository : IProductRepository
   nếu service cần đọc/ghi độc lập.
 - **Dbo chỉ sống bên trong `Repositories`**: không đi vào (tham số) cũng không đi ra (kiểu trả về) khỏi
   repository. Chữ ký chỉ có **VM riêng của repository** (`<X>RecordVM`, `New<X>RecordVM`), kiểu BCL,
-  enum/hằng của Contracts — **không** Dbo, không `IQueryable`, không `Expression<Func<>>`, và **không**
+  enum/hằng của Shared hoặc Database.Enums — **không** Dbo, không `IQueryable`, không `Expression<Func<>>`, và **không**
   VM của API (`ProductVM`, `ProductListItemVM`, `CreateProductRequestVM`…).
   - VM riêng của repository nằm trong `<P>.ViewModels/Records/` (namespace `<P>.ViewModels.Records`),
     tách khỏi VM của API:
@@ -242,7 +243,7 @@ public sealed class ProductRepository : IProductRepository
       liền nhau vì thứ tự khởi tạo field static.
     - Thêm extension `ToRecord()` và `ToDbo()`.
     - Định dạng cột JSON (đọc lẫn ghi) cũng nằm ở đây.
-    - Mapping chỉ được dùng Entities/ViewModels/Contracts/BCL, không EF: fake trong `<P>.Testing` chép
+    - Mapping chỉ được dùng Entities/ViewModels/Shared/Database.Enums/BCL, không EF: fake trong `<P>.Testing` chép
       nguồn các file này vào (`<Compile Include=... Link=...>`) để map giống hệt bản thật.
   - Lệnh sửa cột chuỗi đi qua nạp hàng + gán + `SaveChangesAsync`, không `ExecuteUpdateAsync`. Lý do:
     `SaveChangesAsync` của DbContext soát độ dài cột, còn `ExecuteUpdate` đi vòng qua bước soát đó.
@@ -459,7 +460,7 @@ public sealed partial class NodeApiImplement
 - Cùng một định nghĩa dùng ở CẢ controller lẫn client → đổi trường là compiler bắt cả hai đầu.
 - Tên trường trên dây = camelCase của tên property (resolver chung); chỉ `[JsonProperty("x")]` khi bắt
   buộc khớp hệ ngoài. Enum lên dây là **chuỗi** (`StringEnumConverter`), enum có mã dây riêng thì
-  `[JsonConverter]` gắn trên enum type ở `Contracts` + `IModelBinderProvider` ở `Api.Core`.
+  `[JsonConverter]` gắn trên enum type (ở `Database.Enums` nếu enum lưu DB, ngược lại ở `Shared`) + `IModelBinderProvider` ở `Api.Core`.
 - Cờ "được làm gì" (`CanManage`, `CanTransferOwner`) trả trong VM để Web ẨN nút — không phải để canh
   cửa; mỗi hành động vẫn qua chốt riêng ở API.
 
@@ -518,7 +519,7 @@ wwwroot/
   `@section Scripts`. Icon: sprite SVG inline `<svg class="bi"><use href="#bi-x"/></svg>`, không font icon.
 - Mọi luật Razor/AJAX/ModelState/`page`/`model` chi tiết ở `asp.md` — đọc trước khi viết trang.
 
-### 4.10 Vỏ JSON, lỗi, requestId (`Contracts.Common` + `Api.Core`)
+### 4.10 Vỏ JSON, lỗi, requestId (`Shared.Common` + `Api.Core`)
 
 ```json
 { "requestId": "req_…", "data": { … }, "meta": { "page": 1, "pageSize": 20, "total": 57, "totalPages": 3 } }
