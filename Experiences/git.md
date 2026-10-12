@@ -272,3 +272,9 @@ Xử lý: `git config core.longpaths true` (chỉ trong bản clone) rồi `git 
   user bấm duyệt hoặc tự chạy `Remove-Item -Recurse -Force <dir>`. Bị chặn thì đưa lệnh cho user
   ngay, đừng thử lại nhiều lần.
 - **Agent `isolation: "worktree"` tạo worktree từ repo của THƯ MỤC LÀM VIỆC HIỆN TẠI của phiên, không phải repo đang làm.** Phiên đang đứng ở thư mục khác (vd thư mục memory trong `~/.claude`) thì agent nhận worktree của repo `~/.claude`, không có code, và bị harness chặn chạy git sang repo thật ⇒ agent báo BLOCKED, mất một lượt. Ngoài ra worktree tạo ra có thể nằm ở commit cũ chứ không phải HEAD nhánh đang làm. Cách làm chắc: tự tạo worktree trước (`git worktree add -b <nhánh> <repo>/.claude/worktrees/<tên> <nhánh gốc>`, chép `Directory.Build.rsp` nếu có), rồi giao agent KHÔNG bật isolation, kèm đường dẫn worktree tuyệt đối và dặn chỉ làm trong đó.
+
+## Worktree dùng chung với agent khác: vùng stage có thể bị reset giữa lúc add và commit (2026-10-12)
+
+- **Triệu chứng:** `git rm`/`git add` file mới, lát sau commit thì commit thiếu các file đó; `git status` lại thấy `??` và ` D` (chưa stage).
+- **Nguyên nhân:** có thể do agent/phiên khác cùng worktree reset vùng stage giữa chừng. Ngoài ra đã gặp: `git add -- <thư mục>/` (có `/` cuối, Git Bash trên Windows) im lặng không thêm file chưa track trong thư mục đó, trong khi `git add -v <thư mục>/*.md` thì thêm được.
+- **Cách làm:** add và commit trong CÙNG một lệnh, rồi xem `git diff --cached --name-status` ngay trước commit và đối chiếu đủ A/D/M mong đợi. Lỡ thiếu thì commit bù, không amend.
