@@ -20,3 +20,9 @@
   `grep -n '](#' <file>` và so với các tiêu đề hiện có.
 - **Kiểm nhanh sau khi viết:** liệt kê mọi link trong file bằng `grep -o '](#[^)]*)' <file> | sort -u`, rồi đối chiếu
   từng id với tiêu đề thật.
+
+## Tool Edit trên file trộn CRLF/LF đổi line ending của CẢ file (2026-10-09)
+
+- **Triệu chứng:** sửa vài dòng trong một file `.md` trộn CRLF và LF bằng tool Edit, `git diff --stat` báo hàng trăm dòng đổi trong khi `--ignore-cr-at-eol` chỉ vài dòng. Lặp lại ở mọi lần Edit trên cùng file.
+- **Nguyên nhân:** Edit ghi lại cả file theo một kiểu xuống dòng duy nhất, nên các dòng thuộc kiểu thiểu số bị đổi hết.
+- **Cách làm:** với file trộn, sau mỗi lần Edit so `git diff --stat` với `--ignore-cr-at-eol`. Lệch thì dựng lại từ `git show HEAD:<path>` ở chế độ byte (`perl -e` với `<:raw`), chỉ chèn/thay đúng các dòng mới với line ending của dòng lân cận, rồi kiểm lại hai con số khớp nhau trước khi commit.

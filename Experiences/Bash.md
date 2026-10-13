@@ -322,3 +322,11 @@ Hai bẫy đi kèm khi chạy Python từ Git Bash trên Windows:
 - 2026-09-26: một lệnh dạng `cat > x 2>/dev/null; cat > scratch/fix2.js <<'EOF' ... EOF; node scratch/fix2.js` bị treo ở lệnh `cat > x` đầu tiên (không có heredoc nên nó đọc stdin), harness đẩy nó ra nền rồi tôi dừng. Lần chạy lại chỉ gọi `node scratch/fix2.js` — nhưng file đó chưa hề được ghi lại, nên node chạy một `fix2.js` còn sót từ đợt làm việc trước, và nó chèn khối trùng vào hai file không liên quan. Không có lỗi nào, chỉ in vài dòng MISS/OK lạ.
 - Luật: đặt tên script scratchpad theo việc + đợt (`p14-email-fix.js`), không dùng `fix1/fix2`; ghi script bằng tool Write rồi mới chạy; và sau mỗi script sửa hàng loạt chạy `git status --short` xem có file nào ngoài dự kiến bị đụng.
 - Không bao giờ viết `cat > file` mà không có heredoc/pipe đi kèm — nó chờ stdin tới hết timeout.
+
+## KHÔNG đặt `rm -rf <thư mục cũ>` sau `;` trong cùng lệnh với một bước có thể thất bại (2026-10-09)
+
+Đổi tên project bằng `git mv A B && ... ; rm -rf A` để "dọn thư mục cũ". `git mv` lỗi `Permission denied` (extension C# của VSCode giữ handle thư mục), chuỗi `&&` dừng nhưng `rm -rf` sau `;` vẫn chạy: xoá sạch file đã track (khôi phục được bằng git) VÀ cả `bin/` không track — trong đó có file config người dùng nằm cạnh exe, mất hẳn.
+
+- Bước xoá luôn là một lệnh RIÊNG, chạy sau khi đã xác nhận bước trước thành công.
+- Trước khi xoá một thư mục trong repo, liệt kê phần KHÔNG được git theo dõi (`git status --ignored --short <dir>`, `git clean -ndX <dir>`): app hay ghi config/log cạnh exe trong `bin/`.
+- Thư mục bị khoá thì `git mv` từng mục con sang thư mục mới (file con thường không bị khoá), bỏ lại thư mục rỗng cho người dùng tự xoá.

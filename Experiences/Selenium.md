@@ -105,3 +105,16 @@ tử đích (hoặc con/cha của nó) không — chấp nhận cả con lẫn c
 - **Triệu chứng (26/9/2026, bộ test E2E):** đổi bộ test từ `chromium-headless-shell` (mặc định của headless) sang kênh `chromium` đầy đủ thì test chờ `page.RunAndWaitForDownloadAsync` treo hoặc hỏng. Cùng lúc Internet Download Manager hiện hộp bắt tải cho URL `http://127.0.0.1:<port>/...` của máy chủ giả.
 - **Nguyên nhân (suy luận, khớp triệu chứng):** bản đầy đủ chạy bằng `chrome.exe`, nên IDM gắn được vào tiến trình và cướp lượt tải. `chrome-headless-shell.exe` không bị gắn.
 - **Cách làm:** giữ headless-shell cho bộ chung. Chỉ test nào bắt buộc cần bản đầy đủ (vd `getUserMedia` với micro giả, headless-shell báo `NotSupportedError`) mới chạy trên một browser riêng, và những test đó không được tải tệp. Thấy test tải tệp hỏng mà máy có IDM thì nghi IDM trước.
+
+## Chữ tiếng Việt trong trang có thể ở dạng Unicode TỔ HỢP (NFD), selector khớp chữ không bao giờ trúng
+
+- **Triệu chứng**: selector `[aria-label="..."]` hoặc so `textContent` với chuỗi tiếng Việt viết trong code báo không tìm thấy, dù nhìn trên trang chữ y hệt. Thường chỉ dính vài chữ (vd "ượ", "ợ"), các nhãn khác cùng trang vẫn khớp.
+- **Nguyên nhân**: trang ghi ký tự ở dạng tổ hợp (vd `ư` + `ơ` + dấu chấm dưới U+0323) còn chuỗi trong code là dạng dựng sẵn (NFC). Mắt người không phân biệt được, so byte thì khác.
+- **Cách tránh**: ưu tiên bám class/role/cấu trúc thay vì chữ. Bắt buộc so chữ thì chuẩn hoá cả hai vế: JS `s.normalize('NFC')`, C# `s.Normalize(NormalizationForm.FormC)`. Selector CSS theo thuộc tính KHÔNG chuẩn hoá được, nên thay bằng tìm trong JS rồi so sau khi normalize.
+- **Chẩn đoán nhanh**: trong console `[...el.getAttribute('aria-label')].map(c=>c.codePointAt(0).toString(16))` để thấy ký tự ghép.
+
+## Kill cứng Chrome đang mở profile đã đăng nhập → profile bị đăng xuất
+
+- **Triệu chứng**: sau một lượt probe/test, profile Chrome đang đăng nhập Google bị đá ra ngoài; lượt chạy kế tiếp treo ở bước chờ vì trang đòi đăng nhập.
+- **Nguyên nhân**: đóng Chrome bằng `Stop-Process -Force` / `taskkill /F` / `Process.Kill()` khi nó đang ghi cookie/session ⇒ kho cookie hỏng hoặc mất phiên.
+- **Cách đúng**: `driver.Quit()`, hoặc CDP `Browser.close`, hoặc WM_CLOSE (`CloseMainWindow()`) lên tiến trình trình duyệt chính, rồi CHỜ mọi tiến trình mang đúng `--user-data-dir` tự thoát (có timeout). Chỉ kill khi đã quá timeout và phải ghi cảnh báo. Áp cả cho Chrome tự mở bằng tay để probe, không riêng code của app.
