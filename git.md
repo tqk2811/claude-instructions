@@ -8,6 +8,8 @@
     + **Repo `~/.claude` (bộ hướng dẫn global) KHÔNG chia nhánh phụ** — mọi thay đổi commit thẳng vào `master` của repo đó, đừng tạo branch rồi xin merge. Các luật khác giữ nguyên: mỗi lần commit vào `master` và mỗi lần push vẫn phải có yêu cầu rõ ràng của user.
 - KHÔNG tự ý sửa lại các commit đã tạo (amend/reset/rebase/squash/cherry-pick sửa nội dung...) trừ khi user yêu cầu rõ ràng. Cần thay đổi thì tạo commit MỚI chồng lên.
     + Tuyệt đối KHÔNG amend/reset/force commit đã được push — gây lệch lịch sử local/remote dẫn tới conflict khi push.
+    + **NGOẠI LỆ — sửa commit hỏng của chính mình trên nhánh phụ mình vừa tạo**: commit mình vừa tạo trong CÙNG đợt việc bị lỗi cơ học (đổi line ending ngoài ý muốn, lọt file rác, sai message) thì `git reset --soft HEAD~1` (hoặc `--amend`) rồi commit lại cho sạch, KHÔNG chồng thêm commit "fix line ending". Nếu đã push thì push lại bằng `git push --force-with-lease`, chỉ khi nhánh đó do mình tạo trong đợt này và chưa ai khác dùng (kiểm `git ls-remote` khớp đúng commit mình push). Không áp cho `main`/`master`, nhánh có sẵn từ trước, hay nhánh người khác đã kéo về. Làm xong thì báo user.
+        * **Why**: (2026-10-13) commit xoá 10 dòng bị LF hoá cả file rồi push; chồng commit sửa lại để lại lịch sử một commit diff ~600 dòng vô nghĩa, user muốn reset để commit lại.
     + **"Đã push hay chưa" phải KIỂM, đừng suy từ việc mình không gõ `git push`.** Kiểm bằng `git ls-remote origin <branch>` (hỏi thẳng remote) chứ không phải `git log origin/master..master` — ref `origin/*` là bản chụp local, có thể cũ hoặc đã được thứ khác (IDE, tool, hook) cập nhật. Submodule cũng phải kiểm riêng từng cái.
 - Commit message nhiều dòng: KHÔNG dùng here-string PowerShell `@'...'@` trong Bash tool — Bash tool chạy bằng bash (git bash trên Windows), không hiểu cú pháp PowerShell nên ký tự `@` bị lẫn vào subject (vd subject thành `@ Bump ...`). Thay vào đó dùng nhiều cờ `-m` (mỗi `-m` = 1 đoạn): `git commit -m "subject" -m "body/trailer"`. Nếu thật sự cần multiline thì dùng đúng shell của tool (PowerShell tool mới dùng `@'...'@`, Bash tool dùng `$'...\n...'` hoặc nhiều `-m`).
 - Nội dung commit message luôn viết bằng **tiếng Anh**.
@@ -23,6 +25,7 @@
 - Gắn tag git:
     + Tag dùng full SemVer `vX.Y.Z` (đọc `~/.claude/gitversion.md` để biết pattern version).
     + Tag cho một TÍNH NĂNG MỚI: gắn vào **commit ĐẦU TIÊN của tính năng** (thường là commit `feat`), KHÔNG gắn vào commit cuối (test/docs). Lý do theo pattern GitVersion `Major.Minor.<commits-since-tag>`: pack tại đúng commit đó ra `X.Y.0`, các commit test/docs phía sau thành patch tăng dần (`X.Y.1`, `X.Y.2`...).
+    + Tag phát hành ỨNG DỤNG (CI build theo tag, mỗi tag một GitHub Release) theo `~/.claude/ci-release.md`, không theo luật "commit đầu của tính năng" ở trên.
     + Tag là local cho tới khi push riêng: `git push origin <tag>`; `git push <branch>` KHÔNG tự đẩy tag.
 - **Repo mới tạo (`git init`, `gh repo create`) luôn dùng nhánh chính tên `master`**, không dùng `main`: `git init -b master`. Tạo repo GitHub từ thư mục local (`gh repo create --source . --push`) thì đẩy nhánh `master` lên để nó thành nhánh mặc định.
     + **Why**: user thống nhất tên nhánh chính là `master` cho mọi repo; tạo nhầm `main` thì phải đổi tên cả local lẫn remote và đổi nhánh mặc định trên GitHub.
