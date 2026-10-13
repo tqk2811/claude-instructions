@@ -330,3 +330,12 @@ Hai bẫy đi kèm khi chạy Python từ Git Bash trên Windows:
 - Bước xoá luôn là một lệnh RIÊNG, chạy sau khi đã xác nhận bước trước thành công.
 - Trước khi xoá một thư mục trong repo, liệt kê phần KHÔNG được git theo dõi (`git status --ignored --short <dir>`, `git clean -ndX <dir>`): app hay ghi config/log cạnh exe trong `bin/`.
 - Thư mục bị khoá thì `git mv` từng mục con sang thư mục mới (file con thường không bị khoá), bỏ lại thư mục rỗng cho người dùng tự xoá.
+
+## Lệnh test/build chạy nền luôn phải có giới hạn thời gian
+
+(2026-10-13) Agent chạy `cargo test ... > log 2>&1` ở nền, không giới hạn thời gian. Một test GPU bị treo gần 2 giờ mà không ai biết, vì log chỉ có dòng "running for over 60 seconds". Sau đó agent còn chạy lại y nguyên mà chưa sửa gì (file test build ra cùng hash), nên lại treo tiếp.
+
+- Bọc lệnh dài bằng `timeout <giây> <lệnh>`, chọn mức khoảng gấp 2–3 lần thời gian chạy bình thường.
+- Test treo thì tìm nguyên nhân trước (đọc diff, chạy riêng một binary với `--test-threads=1`), không chạy lại nguyên cả bộ.
+- Test GPU chạy song song với việc khác cùng dùng GPU có thể treo hoặc tự skip. Đừng chạy hai bộ test GPU cùng lúc.
+- Bộ test có bài tự bỏ qua khi thiếu phần cứng/thư viện (in "skipping" rồi return) thì "N passed" không chứng minh gì: chạy với `-- --nocapture` (libtest giấu output của bài qua) và đếm dòng skip, nhất là khi muốn kiểm đúng nhánh vừa sửa.
