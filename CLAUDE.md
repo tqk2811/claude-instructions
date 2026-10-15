@@ -64,6 +64,7 @@
   - Bẫy đi kèm cần nhớ khi debug: msys nuốt `\r` lúc hiển thị nên `grep`/`cat -A` KHÔNG thấy nó, và `sed -i 's/$/\r/'` trên file đã CRLF sẽ sinh `\r\r\n`. Chi tiết ở `~/.claude/Experiences/Bash.md`.
 - Khi thao tác Android SDK/NDK (build server `app_process` bằng javac + d8, `ANDROID_HOME`/`ANDROID_SDK_ROOT`, `platforms/android-XX/android.jar`, `build-tools/<ver>/d8`, NDK), đọc `~/.claude/android.md` trước.
 - Khi thao tác Chrome (chạy `chrome.exe` headless, `--screenshot`, `--dump-dom`, đo bằng CDP/`--remote-debugging-port`, và **bất kỳ lúc nào định giết tiến trình `chrome.exe`**), đọc `~/.claude/chrome.md` trước. Luật quan trọng nhất ở đó: **kiểm `--user-data-dir` của từng tiến trình trước khi kill, không bao giờ kill theo tên ảnh** — Chrome cá nhân của user và Chrome headless là cùng một `chrome.exe`.
+- Khi làm việc với ffmpeg/ffprobe trong code (dựng lệnh, filter graph, probe media, transition, render video), đọc `~/.claude/ffmpeg.md` trước.
 - Khi thao tác file GitVersion (GitVersion.yml/.json hoặc property `$(GitVersion_*)` trong .csproj/.targets), đọc `~/.claude/gitversion.md` trước.
 - Khi thao tác changelog/git-cliff (cliff.toml/`Changelog.ps1`/CHANGELOG.md/`changelog.yml`/sinh release notes), đọc `~/.claude/git-cliff.md` trước.
 - Khi dựng hoặc sửa CI phát hành ứng dụng (GitHub Actions `release.yml`, gắn tag phát hành, GitHub Releases, version bản build lấy từ tag), đọc `~/.claude/ci-release.md` trước.
