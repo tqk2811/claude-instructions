@@ -1194,3 +1194,9 @@ Ví dụ dính bẫy: gán `StartupUri = null` trong `OnStartup` để chặn t�
 - `new IPAddress(0x00000001)` trên máy little-endian (mọi máy x86/ARM thường gặp) cho ra **1.0.0.0**, không phải 0.0.0.1: byte thấp của `long` thành octet đầu.
 - Gặp thật (2026-10-03): marker SOCKS4a "0.0.0.x" dựng bằng `new IPAddress(1L)` thành 1.0.0.0, nên mã kiểm "có phải 4a không" luôn trả false, tên miền không bao giờ được gửi, và mọi CONNECT đi tới 1.0.0.0. Không ném lỗi, chỉ kết nối hỏng.
 - Cách đúng: dựng từ mảng byte, `new IPAddress(new byte[] { 0, 0, 0, 1 })`, hoặc `IPAddress.Parse("0.0.0.1")`.
+
+## Visual Studio multi-launch profile (`.slnLaunch`): ba lỗi hay mắc khi tự viết tay
+- **Tên file**: Visual Studio CHỈ đọc `<Solution>.slnLaunch` (đặt cạnh `.sln`). Tên `<Solution>.slnLaunch.user` KHÔNG được VS nhận (không phải bản riêng từng máy kiểu `.csproj.user`), nên profile không hiện trong danh sách khởi chạy.
+- **File là JSON thật**: dấu `\` trong `"Path"` phải escape thành `\` (`"BaseSource.Api\BaseSource.Api.csproj"`). Viết `\B`, `\U`... là JSON hỏng, VS đọc không được hoặc bỏ qua profile mà không báo rõ. Kiểm bằng một trình parse JSON (`python -m json.tool`, `ConvertFrom-Json`) trước khi báo xong.
+- **Đủ project**: trước khi liệt kê project vào profile, đọc `.sln` lấy MỌI project chạy được (API phụ như upload/file server dễ bị sót) và hỏi lại nếu không chắc profile cần những gì. Thuộc tính `"DebugTarget"` là tuỳ chọn, bỏ đi để VS dùng launch profile mặc định của project.
+- Gặp thật (2026-10-26): tạo `.slnLaunch.user` với `\` không escape và thiếu project upload API; VS không nhận file, user phải đổi lại thành `.slnLaunch`.
