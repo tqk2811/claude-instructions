@@ -1,3 +1,4 @@
+- Khi thêm hoặc sửa cache dữ liệu (cache ở API hoặc web gọi API, xoá cache khi ghi, `IMemoryCache`/`HybridCache`/OutputCache, header cache file tĩnh), đọc `~/.claude/asp-cache.md` trước.
 - Mọi thao tác database phải nằm trong service tương ứng.
 - `POST luôn đi bằng AJAX, GET đi thẳng trên URL`:
     + Mọi thao tác ghi (POST) phải gửi bằng `fetch`/AJAX và handler trả **JSON**, không `return Page()`.
