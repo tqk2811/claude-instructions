@@ -3,11 +3,11 @@
 - Tag bắt buộc full SemVer `X.Y.Z` (vd `v1.0.0`). Tag thiếu (`v1.0`) bị **âm thầm bỏ qua**: GitVersion fallback về `0.0.1` và `CommitsSinceVersionSource` = tổng số commit từ gốc repo. Không có warning.
 - `mode: ContinuousDeployment` + `increment: Patch` chỉ +1 cho patch (không phải = số commit). Vd tag `v1.0.0` + 26 commit → `MajorMinorPatch = 1.0.1`, không phải `1.0.26`.
 
-### Pattern MAJOR.MINOR.<commits-since-tag>
+### Pattern version = đúng tag `vM.N.P`
 
 `GitVersion.yml`:
 ```yaml
-mode: ManualDeployment
+deployment-mode: ManualDeployment   # key v6 là deployment-mode, KHÔNG phải mode
 tag-prefix: 'v'
 branches:
   master:
@@ -18,12 +18,11 @@ branches:
     increment: None
 ```
 
-MSBuild (`.targets` / `.csproj`):
-```xml
-<Version>$(GitVersion_Major).$(GitVersion_Minor).$(GitVersion_CommitsSinceVersionSource)</Version>
-```
+Không dùng `semantic-version-format: Loose` hay `workflow: GitFlow/v1`.
 
-Lấy Major/Minor trực tiếp từ tag (`increment: None` giữ nguyên), patch = số commit kể từ tag → ra 3-segment `1.0.N`.
+Commit mang tag → `CommitsSinceVersionSource = 0` → version = `MajorMinorPatch` của tag; commit sau
+tag → `M.N.P-dev.<số commit kể từ tag>`. Target MSBuild: `~/.claude/BuildNuggetCsharpLibrary.md` mục 1.
+Property `EnableGitVersion` KHÔNG tồn tại trong GitVersion.MsBuild 6.8.2: đừng đặt Condition theo nó.
 
 ### Debug GitVersion
 
@@ -94,3 +93,36 @@ config riêng trong `branches:` nên không cần nhánh nguồn) ⇒ chạy bì
 Lưu ý: cùng một máy, cùng kiểu nhánh `fix/*`, repo thư viện A build nhánh phụ KHÔNG lỗi còn
 repo thư viện B thì lỗi — khác nhau ở chỗ master của repo kia có commit riêng sau điểm chẻ. Đừng
 suy từ "repo A chạy được" ra "repo B phải chạy được".
+
+### CI checkout tag (detached HEAD) → "No base versions determined"
+
+(2026-10-26, GitVersion.MsBuild 6.8.2) `actions/checkout` của một tag để HEAD ở trạng thái detached.
+GitVersion khi đó báo `No base versions determined on the current branch` **dù commit đang có tag
+`vM.N.P` đúng định dạng**. Cách sửa trong workflow, sau bước kiểm tag nằm trên master:
+
+```
+git checkout -B master $GITHUB_SHA
+```
+
+Nhánh `master` cục bộ trỏ đúng commit của tag ⇒ áp config `master` (`increment: None`) ⇒ ra đúng
+`M.N.P`. Đã kiểm bằng clone thử: commit có tag ra `9.9.0`, thêm một commit ra `9.9.0-dev.1`.
+
+### Sửa gốc cho nhánh phụ "orphaned": nhánh `unknown` bắt mọi tên còn lại
+
+(2026-10-26, GitVersion.MsBuild 6.8.2, KHÔNG dùng `workflow: GitFlow/v1`) Thêm vào `branches:` của
+`GitVersion.yml`:
+
+```yaml
+  unknown:
+    regex: ^(?!master$|main$).+
+    increment: None
+    source-branches: [master, main]
+    label: dev
+```
+
+Đã kiểm: nhánh phụ 1 commit sau `v2.0.0` → `MajorMinorPatch 2.0.0`, `CommitsSinceVersionSource 1`;
+`master` tại tag → `2.0.0`/0; checkout tag detached → `2.0.0`/0; commit không tag ở trạng thái detached
+(submodule) → `2.0.0`/1; repo chưa có tag hợp lệ → `0.0.0` (không còn lỗi). Mục "Những cách KHÔNG sửa
+được" phía trên (catch-all `feature:`) là khi còn `workflow: GitFlow/v1`; bỏ workflow đó rồi dùng `unknown:`
+thì sửa được. Repo A dùng repo B làm submodule thì GitVersion chạy cả trong submodule theo
+`GitVersion.yml` của commit submodule đang trỏ ⇒ phải nâng submodule lên commit đã có config này.

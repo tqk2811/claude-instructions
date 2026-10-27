@@ -1,3 +1,4 @@
+- Khi cần xem log của host đã deploy qua HTTP (endpoint `/_logs` bảo vệ bằng header token, ghi log tệp theo ngày bằng log4net), đọc `~/.claude/asp-log-reader.md` trước.
 - Khi thêm hoặc sửa cache dữ liệu (cache ở API hoặc web gọi API, xoá cache khi ghi, `IMemoryCache`/`HybridCache`/OutputCache, header cache file tĩnh), đọc `~/.claude/asp-cache.md` trước.
 - Mọi thao tác database phải nằm trong service tương ứng.
 - `POST luôn đi bằng AJAX, GET đi thẳng trên URL`:

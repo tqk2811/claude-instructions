@@ -133,3 +133,16 @@ $env:PYTHONIOENCODING="utf-8"; python foo.py             # PowerShell
 Liên quan nhưng KHÁC nhau: mục "print trong worker con của multiprocessing" ở trên là do tiến trình con
 không chạy khối `if __name__ == "__main__"`. `PYTHONIOENCODING` vá được CẢ HAI vì nó đi theo môi trường,
 di truyền sang tiến trình con.
+
+## `torchcodec` cài kèm làm hỏng pipeline ASR của transformers trên Windows (WinError 127)
+
+Gói như `f5-tts` kéo theo `torchcodec` dù không dùng tới. Khi nó có mặt, `transformers` (pipeline
+`automatic-speech-recognition`, Whisper) sẽ `import torchcodec`. Trên Windows, import đó nổ
+`OSError: [WinError 127] The specified procedure could not be found` (hoặc `Could not find module
+libtorchcodec_coreN.dll`) nếu phiên bản torchcodec không khớp torch, hoặc FFmpeg shared trên máy khác
+dải nó hỗ trợ (vd torchcodec 0.7 chỉ nhận FFmpeg 4–7, máy có FFmpeg 8). Lỗi nổ cả khi truyền mảng
+numpy chứ không riêng đường dẫn file.
+
+**Xử lý:** gói không thật sự dùng torchcodec thì `pip uninstall -y torchcodec` ngay trong script
+setup. Đưa audio cho pipeline dạng `{"raw": np_array_mono, "sampling_rate": sr}` (đọc bằng
+`soundfile`) để không phụ thuộc bộ giải mã audio nào.

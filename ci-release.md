@@ -1,8 +1,8 @@
 # Phát hành ứng dụng qua CI (GitHub Actions + tag)
 
-Áp dụng cho ỨNG DỤNG phát hành bản build (zip/installer) lên GitHub Releases. Thư viện NuGet có
-cách đánh version riêng (GitVersion, tag ở commit đầu của tính năng), xem `~/.claude/gitversion.md`
-và `~/.claude/BuildNuggetCsharpLibrary.md`.
+Áp dụng cho mọi bản phát hành lên GitHub Releases: ỨNG DỤNG (zip/installer) và THƯ VIỆN NuGet
+(nupkg) đều theo cùng mô hình tag dưới đây. Phần riêng của NuGet (target version, push nuget.org):
+xem mục "Thư viện NuGet" cuối file và `~/.claude/BuildNuggetCsharpLibrary.md`.
 
 ## Mô hình chuẩn: gắn tag thủ công, CI build theo tag
 
@@ -71,3 +71,13 @@ jobs:
   `release.yml` kiểu cũ nên push tag bù không kích hoạt build), rồi chạy lại workflow trên tag mới.
 - **Bật test ở mỗi push dễ lộ test có race** vốn hiếm khi đỏ ở máy dev (runner nhanh/chậm khác thứ tự
   luồng). Sửa test cho tất định, đừng thêm vào danh sách loại trừ.
+
+## Thư viện NuGet
+
+- Version = đúng tag qua GitVersion (`~/.claude/gitversion.md`, target ở
+  `~/.claude/BuildNuggetCsharpLibrary.md` mục 1): commit mang tag ra `M.N.P`, sau tag ra
+  `M.N.P-dev.<n>`. CI kiểm version của nupkg == tên tag bỏ `v`.
+- Chỉ publish khi commit của tag nằm trên master:
+  `git merge-base --is-ancestor $GITHUB_SHA origin/master` (lệch thì fail, không push).
+- `dotnet nuget push --skip-duplicate` chỉ chạy khi có secret `NUGETKEY`; không có thì bỏ qua.
+- **Tránh downgrade**: tag mới phải lớn hơn version cao nhất đã có trên nuget.org.

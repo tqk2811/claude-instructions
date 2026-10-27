@@ -2,29 +2,33 @@
 
 Áp dụng cho các thư viện riêng của user (danh sách ở `~/.claude/local.md`; đóng gói bằng `dotnet pack` + `.nuspec`, version bằng GitVersion). Cấu hình chung đặt ở `ProjectBuildProperties.targets` (root repo), mỗi packable csproj `<Import Project="..\ProjectBuildProperties.targets" />`.
 
-## 1. Version scheme (tag `vMAJOR.MINOR.0`)
+## 1. Version scheme (version = đúng tag `vM.N.P`)
 
+Mô hình phát hành chung với ứng dụng: mỗi bản = một tag `vM.N.P` user tự gắn và push = một GitHub
+Release cùng tên (CI: `~/.claude/ci-release.md`).
+
+- Commit mang tag → `Version = M.N.P`; commit sau tag (build dev) → `M.N.P-dev.<số commit kể từ tag>`.
 - `AssemblyVersion = Major.Minor.0.0` (cố định theo minor → không vỡ binding redirect)
-- `FileVersion     = Major.Minor.<commits kể từ tag>.0`
-- `PackageVersion  = Major.Minor.<commits kể từ tag>` (= NuGet version)
+- `FileVersion = M.N.P.0`; `PackageVersion = InformationalVersion = Version`.
 
 Set bằng target chạy **sau** GitVersion:
 ```xml
 <Target Name="SetVersionFromGitVersion" AfterTargets="GetVersion"
-        Condition="'$(EnableGitVersion)' == 'true' and '$(DisableGitVersionTask)' != 'true'">
+        Condition="'$(DisableGitVersionTask)' != 'true'">
   <PropertyGroup>
-    <Version>$(GitVersion_Major).$(GitVersion_Minor).$(GitVersion_CommitsSinceVersionSource)</Version>
+    <Version Condition="'$(GitVersion_CommitsSinceVersionSource)' == '0'">$(GitVersion_MajorMinorPatch)</Version>
+    <Version Condition="'$(GitVersion_CommitsSinceVersionSource)' != '0'">$(GitVersion_MajorMinorPatch)-dev.$(GitVersion_CommitsSinceVersionSource)</Version>
     <PackageVersion>$(Version)</PackageVersion>
     <AssemblyVersion>$(GitVersion_Major).$(GitVersion_Minor).0.0</AssemblyVersion>
-    <FileVersion>$(GitVersion_Major).$(GitVersion_Minor).$(GitVersion_CommitsSinceVersionSource).0</FileVersion>
+    <FileVersion>$(GitVersion_MajorMinorPatch).0</FileVersion>
     <InformationalVersion>$(Version)</InformationalVersion>
     <NuspecProperties>id=$(MSBuildProjectName);version=$(Version)</NuspecProperties>
   </PropertyGroup>
 </Target>
 ```
-- Cấu hình `GitVersion.yml` (ManualDeployment + `increment: None`): xem `~/.claude/gitversion.md`. Patch của output = số commit kể từ tag, **không** lấy patch của tag → muốn bump version phải bump MINOR của tag.
-- **Tag tại đúng commit cần phát hành** (commits=0 → version `M.m.0`). Nếu tạo commit mới sau tag thì version +1 → khi sửa file đã commit-versioning, dùng `git commit --amend` + `git tag -f` (commit chưa push) để giữ version, KHÔNG tạo commit mới.
-- **Tránh downgrade**: trước khi đặt tag, check version đã publish trên nuget.org (`https://api.nuget.org/v3-flatcontainer/<id-lower>/index.json`). Bản `1.0.0-build<date>` là prerelease → stable `1.0.0` lớn hơn (OK). Nhưng nếu đã có stable cao hơn (vd `1.0.2`) thì tag `v1.0.0` sẽ ra package thấp hơn → phải bump minor (vd `v1.1.0`).
+- Cấu hình `GitVersion.yml`: xem `~/.claude/gitversion.md`. Property `EnableGitVersion` không tồn tại (GitVersion.MsBuild 6.8.2) → đừng dùng trong Condition.
+- **CI** (khung chung ở `~/.claude/ci-release.md`): trigger push tag `v[0-9]+.[0-9]+.[0-9]+`; chỉ publish khi commit của tag nằm trên master (`git merge-base --is-ancestor $GITHUB_SHA origin/master`); kiểm version đã pack == tên tag bỏ `v`, lệch thì fail; `dotnet nuget push --skip-duplicate` chỉ khi có secret `NUGETKEY`.
+- **Tránh downgrade**: trước khi gắn tag, check version cao nhất trên nuget.org (`https://api.nuget.org/v3-flatcontainer/<id-lower>/index.json`); tag mới phải lớn hơn. Prerelease (`1.0.0-build<date>`) nhỏ hơn stable cùng số.
 
 ## 2. `dotnet pack` + nuspec
 
@@ -71,7 +75,7 @@ Cấu trúc: 1 managed csproj (multi-TFM) + 1 `*.Native.vcxproj` (DynamicLibrary
 ### Đánh version cho native dll (resource `.rc`)
 Native dll không có version từ MSBuild — phải qua **resource `VS_VERSION_INFO`**:
 - `version.rc`: `#include "version.generated.h"` + khối `VS_VERSION_INFO` (`FILEVERSION`/`PRODUCTVERSION` từ macro) + `StringFileInfo` (FileVersion, ProductVersion, CompanyName, OriginalFilename...). **`.rc` và `.h` phải có newline cuối** nếu không `rc.exe` báo `RC1004 unexpected end of file`.
-- `version.generated.h`: định nghĩa `VER_FILE_MAJOR/MINOR/BUILD`, `VER_FILEVERSION_STR`, `VER_PRODUCTVERSION_STR`. FileVersion = `Major.Minor.<commits>.0`, ProductVersion = `Major.Minor.<commits>` (khớp managed/package).
+- `version.generated.h`: định nghĩa `VER_FILE_MAJOR/MINOR/BUILD`, `VER_FILEVERSION_STR`, `VER_PRODUCTVERSION_STR`. FileVersion = `M.N.P.0`, ProductVersion = Version (khớp managed/package).
 - vcxproj: thêm `<ResourceCompile Include="version.rc" />` + `<ClInclude Include="version.generated.h" />`.
 
 ### version.generated.h tự sinh + git sạch
@@ -88,10 +92,10 @@ Native dll không có version từ MSBuild — phải qua **resource `VS_VERSION
 
 ### Build.ps1 robust mọi máy (vswhere + MSBuild, KHÔNG devenv)
 - Tìm MSBuild qua **vswhere** (path cố định `${ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe`): `& $vswhere -latest -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe'`.
-- Lấy version: `dotnet-gitversion /output json | ConvertFrom-Json` (auto `dotnet tool install -g GitVersion.Tool` nếu thiếu) → Major/Minor/CommitsSinceVersionSource.
+- Lấy version: `dotnet-gitversion /output json | ConvertFrom-Json` (auto `dotnet tool install -g GitVersion.Tool` nếu thiếu) → MajorMinorPatch + CommitsSinceVersionSource, ghép version theo đúng quy tắc mục 1.
 - Ghi `version.generated.h` (nhớ **newline cuối**).
 - Build native: `& $msbuild Native.vcxproj /t:Rebuild /p:Configuration=Release /p:Platform=x64 /p:SolutionDir="$repo\"` và `Platform=Win32` (build vcxproj trực tiếp cần `/p:SolutionDir` để OutDir đúng).
 - `dotnet pack` managed (version từ GitVersion target).
 
 ### Verify native
-`[Diagnostics.FileVersionInfo]::GetVersionInfo("x64\Release\*.Native.dll").FileVersion` = `Major.Minor.<commits>.0`. nupkg có `runtimes/win-x64|x86/native/*.Native.dll`.
+`[Diagnostics.FileVersionInfo]::GetVersionInfo("x64\Release\*.Native.dll").FileVersion` = `M.N.P.0`. nupkg có `runtimes/win-x64|x86/native/*.Native.dll`.
