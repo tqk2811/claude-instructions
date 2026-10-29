@@ -39,3 +39,9 @@
 - **Cách tự kiểm khi lạc hướng**: đổi `-i file` thành `-Q "SELECT 1"` trên đúng dòng lệnh đó. Chạy
   được nghĩa là phần đăng nhập vốn không sai — thủ phạm nằm trong **chuỗi đường dẫn**, chứ câu báo
   lỗi thì đang chỉ sang hướng khác.
+
+## Bảng có filtered index thì INSERT qua `sqlcmd` báo lỗi 1934 QUOTED_IDENTIFIER
+
+- **Triệu chứng**: `Msg 1934 ... SET options have incorrect settings: 'QUOTED_IDENTIFIER'` khi INSERT/UPDATE vào bảng có filtered index (vd chỉ mục duy nhất `WHERE Slug IS NOT NULL` do EF sinh).
+- **Vì sao**: `sqlcmd` mặc định chạy `QUOTED_IDENTIFIER OFF`; filtered index bắt buộc ON.
+- **Cách xử lý**: thêm switch `-I` (hoặc `SET QUOTED_IDENTIFIER ON;` đầu script).

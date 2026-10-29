@@ -1,5 +1,7 @@
 - Khi cần xem log của host đã deploy qua HTTP (endpoint `/_logs` bảo vệ bằng header token, ghi log tệp theo ngày bằng log4net), đọc `~/.claude/asp-log-reader.md` trước.
 - Khi thêm hoặc sửa cache dữ liệu (cache ở API hoặc web gọi API, xoá cache khi ghi, `IMemoryCache`/`HybridCache`/OutputCache, header cache file tĩnh), đọc `~/.claude/asp-cache.md` trước.
+- Khi web (MVC/Razor) đăng nhập/gọi API bằng access token + refresh token (cookie auth, làm mới token, đăng xuất, lấy quyền người dùng từ API), đọc `~/.claude/asp-auth-cookie-tokens.md` trước.
+- Khi làm chức năng upload/download file người dùng (sổ file trong DB, link `/file/{id}/{tên}`, file công khai/riêng tư, link có ký, proxy file giữa các host, bộ dọn file mồ côi, cache file qua CDN), đọc `~/.claude/asp-file-storage.md` trước.
 - Mọi thao tác database phải nằm trong service tương ứng.
 - `POST luôn đi bằng AJAX, GET đi thẳng trên URL`:
     + Mọi thao tác ghi (POST) phải gửi bằng `fetch`/AJAX và handler trả **JSON**, không `return Page()`.

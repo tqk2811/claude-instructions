@@ -182,7 +182,7 @@ làm việc là của user, họ thao tác song song bằng IDE/terminal riêng 
   kia**, và working tree bị giật khỏi nhánh nó đang làm. Trước **mọi** lệnh đổi HEAD (`checkout`,
   `switch`, `checkout -b`) phải: `git branch --show-current` + `git reflog -3` so với ảnh chụp đầu phiên;
   lệch (có `checkout: moving ...` mình không gõ) ⇒ có phiên khác đang dùng cây này ⇒ **đừng đổi HEAD**,
-  làm trong bản clone riêng (`D:\tmp\<tên>`, nhớ `remote set-url` như mục trên) hoặc hỏi user. Cách
+  làm trong bản clone riêng (thư mục clone tạm theo `Quy tắc clone tạm`, nhớ `remote set-url` như mục trên) hoặc hỏi user. Cách
   user chốt khi có agent khác chạy: clone ra chỗ khác → commit + push nhánh mới → xoá clone.
 - **TÁI PHẠM lần thứ tư (2026-09-17, k-rag-platform), đúng kịch bản đã ghi ngay trên**: gitStatus đầu
   phiên ghi `master`, tôi `git checkout -b docs/tenant-database-erd` mà KHÔNG chạy `git reflog -3`

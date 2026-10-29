@@ -51,9 +51,11 @@
   - Trước khi commit repo `~/.claude`, grep phần diff tìm tên project, đường dẫn máy và username.
   - **Why**: repo `~/.claude` có thể được chia sẻ hoặc public. Tên project, khách hàng và kiến trúc nội bộ từng lọt vào file experience/rule qua các ghi chú sự cố, rồi phải đi ẩn danh lại hàng loạt.
 - Khi thao tác git (commit/push/rebase/reset/merge/cherry-pick...), đọc `~/.claude/git.md` trước.
+- `Quy tắc clone tạm`: cần làm song song trên một bản clone riêng (vd agent khác đang dùng workspace) thì clone vào thư mục clone tạm ghi ở `~/.claude/local.md` (đường dẫn NGẮN, dạng `<gốc clone>\<tên repo>\<tên branch>` để nhiều clone không đè nhau), KHÔNG clone vào scratchpad; luôn bật `-c core.longpaths=true`. Làm xong (commit + push branch mới) thì xoá thư mục clone.
+  - **Why**: đường dẫn scratchpad rất dài, repo có file nằm sâu (vd font trong `wwwroot/...`) nên checkout lỗi "Filename too long" trên Windows.
 - `Quy tắc branch & commit theo từng bước`: Khi một yêu cầu sẽ đẻ ra **nhiều thay đổi/chức năng khác nhau** (kể cả khi user thêm việc giữa chừng), thì NGAY TỪ ĐẦU tạo branch mới rồi chạy theo nhịp `làm xong 1 việc → build/test → (review nếu phức tạp) → commit → làm việc tiếp → commit → ...` (có cần lượt review hay không thì theo `Quy tắc review & phản biện`). KHÔNG dồn hết rồi mới ngồi chia commit ở cuối.
   - **Why**: dồn hết rồi mới tách commit theo chức năng thì các thay đổi đan xen trong cùng file, phải dựng lại trạng thái trung gian (sửa ngược code, `git hash-object` + `git update-index --cacheinfo`, cắt patch từng hunk) — tốn thời gian, dễ sai, và các commit giữa chừng không được build/test thật.
-  - **How to apply**: thấy việc có từ 2 phần trở lên thì tự tạo branch rồi commit dần, KHÔNG cần xin phép commit — chỉ báo tên branch cho user biết. Luật còn lại giữ nguyên theo `~/.claude/git.md`: commit thẳng vào `main`/`master`, push, merge/rebase về nhánh chính đều phải có yêu cầu rõ ràng; không amend/reset commit đã tạo (trừ ngoại lệ sửa commit hỏng của chính mình trong `~/.claude/git.md`). Nếu user giao thêm việc khi phần đang làm đã xong, commit phần đó trước rồi mới bắt tay việc mới.
+  - **How to apply**: thấy việc có từ 2 phần trở lên thì tự tạo branch rồi commit dần, KHÔNG cần xin phép commit, và được tự push nhánh phụ đó — chỉ báo tên branch cho user biết. Luật còn lại giữ nguyên theo `~/.claude/git.md`: commit/push thẳng vào `main`/`master`, merge/rebase về nhánh chính đều phải có yêu cầu rõ ràng; không amend/reset commit đã tạo (trừ ngoại lệ sửa commit hỏng của chính mình trong `~/.claude/git.md`). Nếu user giao thêm việc khi phần đang làm đã xong, commit phần đó trước rồi mới bắt tay việc mới.
   - **NGOẠI LỆ — repo `~/.claude`**: bộ hướng dẫn global (`~/.claude/*.md`) KHÔNG chia nhánh phụ; mọi thay đổi commit thẳng vào `master` của repo đó. Vẫn giữ nguyên luật ở `~/.claude/git.md`: commit vào nhánh chính và push đều phải có yêu cầu rõ ràng của user cho TỪNG lần.
 - Khi thao tác code C# (.cs/.csproj/.sln), đọc `~/.claude/csharp.md` trước.
 - Khi thao tác Entity Framework Core (tạo/sửa migration, `migrationBuilder.Sql`, raw SQL, `DbContext`, sinh script `dotnet ef migrations script`), đọc `~/.claude/database-EF.md` trước.
@@ -98,6 +100,7 @@
     - `Experiences/Mermaid.md`: khối ```` ```mermaid ```` trong file `.md`.
     - `Experiences/Python.md`: viết hoặc chạy Python.
     - `Experiences/Selenium.md`: tự động hoá trình duyệt, CDP.
+    - `Experiences/E2E.md`: test E2E (host web + trình duyệt headless), chạy song song nhiều process (chia shard theo lớp).
     - `Experiences/sqlcmd.md`: chạy SQL bằng `sqlcmd`.
     - `Experiences/PostgreSQL.md`: PostgreSQL/Npgsql (mã lỗi, khoá, transaction, SQL thô).
   - **Ghi**: gặp và xử lý được một lỗi (dù do user hay do bạn) thì: nếu là **bài học chung** (áp dụng cho mọi project, không phụ thuộc code cụ thể) ghi vào `~/.claude/Experiences/<tên ngôn ngữ/công cụ>.md` (viết theo `Quy tắc ẩn danh ~/.claude`: không nêu tên project, đường dẫn máy); nếu là **vấn đề riêng của project** ghi vào memory local của project. Tạo file experience MỚI thì thêm một dòng vào bảng tra ở trên trong cùng lượt sửa, nếu không file mới sẽ không bao giờ được đọc.
