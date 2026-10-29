@@ -18,6 +18,21 @@
 - Ưu tiên **composition hơn kế thừa**: chứa đối tượng cộng tác thay vì kế thừa lớp cơ sở chỉ để mượn vài thành viên — kế thừa còn kéo theo mọi thành viên `public` của lớp cha ra API của mình (đó có thể là thứ đang muốn giấu).
 - Trạng thái chỉ dùng trong nội bộ để `private`/`internal`; đừng để `public` cho tiện gọi.
 
+## Không bất đồng bộ thật thì viết hàm thường — không bọc `Task` rồi chờ đồng bộ
+
+- Hàm/delegate/interface mà mọi cài đặt đều xong đồng bộ (không chờ I/O) thì trả `void`/`T`, KHÔNG trả `Task`/`Task<T>` "cho giống khuôn async" rồi phía gọi ép đồng bộ bằng `GetAwaiter().GetResult()`, `.Result` hay `.Wait()`.
+- Việc chậm thật sự (I/O, mạng) mà nơi gọi không được chờ (thread nóng, vòng xử lý tuần tự) thì đẩy ra task nền (`_ = Task.Run(...)` có bắt lỗi) và báo kết quả qua kênh riêng, chứ đừng biến cả hợp đồng thành `Task`.
+- Cần async THẬT nhưng phải ở yên một thread (giữ thứ tự xử lý, state không lock, thread có ưu tiên riêng, tránh chờ thread pool lên lịch) thì chạy trên một `SynchronizationContext` một thread thay vì `GetResult()` hay để continuation nhảy sang thread pool. Đừng tự viết: dùng `Nito.AsyncEx` (gói `Nito.AsyncEx.Context`) — `AsyncContext.Run(async () => ...)` biến thread hiện tại thành event loop tới khi task xong; `AsyncContextThread` tạo sẵn một thread riêng có context đó.
+  - Bẫy: `ConfigureAwait(false)` trong code chạy trên context đó sẽ thoát ra thread pool — đường cần ở yên thì KHÔNG dùng nó (code thư viện bên dưới dùng thì không sao, chỉ continuation của chính nó rời đi).
+  - Bẫy: một lệnh chặn (I/O đồng bộ, `Wait()`, `Thread.Sleep`) trên thread đó làm đứng MỌI continuation đang xếp hàng; thứ cần chờ phải là API async thật (overlapped I/O), không phải bọc lệnh chặn.
+  - Một thread không có nghĩa là tuần tự: khi việc A dừng ở `await` thì việc B chạy chen; cần thứ tự thì tự xếp hàng (queue theo khoá, `AsyncLock`/`SemaphoreSlim(1)`).
+- Gặp sẵn `GetAwaiter().GetResult()`/`.Result` trên `Task` mà mọi cài đặt đều đồng bộ thì đề xuất đổi hợp đồng sang hàm thường; nếu là API công khai của thư viện thì nói rõ là breaking change.
+- Chỉ chấp nhận chờ đồng bộ khi thật sự bí, và kèm comment vì sao:
+  - thư viện bên ngoài CHỈ có API async, không có bản đồng bộ, mà nơi gọi buộc phải đồng bộ (tìm bản sync của thư viện trước đã);
+  - ranh giới không có lựa chọn: entry point/`Dispose` cũ không có bản async, callback của framework bắt buộc đồng bộ, override `Read`/`Write`/`Flush` đồng bộ của `Stream` khi nguồn bên dưới chỉ có async (lớp `Stream` bắt buộc cài; đường chính vẫn là `ReadAsync`/`WriteAsync` cài thật).
+  - `.Result` trên task CHẮC CHẮN đã xong (vd ngay sau `await Task.WhenAny(...)` trả đúng task đó) không phải chờ đồng bộ; vẫn nên viết `await task` cho rõ.
+- **Why**: kiểu trả `Task` nói dối rằng "có thể chờ", nên người viết cài đặt mới dễ thêm `await` I/O vào đường phải đồng bộ (làm treo luồng gọi, có thể deadlock nếu có SynchronizationContext); còn `void` để compiler chặn luôn. Thêm nữa `GetResult()`/`.Result` che lỗi thiết kế và gói exception khó đọc (`.Result` bọc `AggregateException`).
+
 ## Quy ước tổ chức namespace theo C# type (trong feature)
 - Giữ namespace theo feature (Native/Packet/Flow/Redirect/Pipeline...), nhưng tách type theo **kind** vào sub-namespace con của chính feature đó:
   - `interface` → `<Feature>.Interfaces`

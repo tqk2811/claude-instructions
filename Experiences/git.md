@@ -278,3 +278,9 @@ Xử lý: `git config core.longpaths true` (chỉ trong bản clone) rồi `git 
 - **Triệu chứng:** `git rm`/`git add` file mới, lát sau commit thì commit thiếu các file đó; `git status` lại thấy `??` và ` D` (chưa stage).
 - **Nguyên nhân:** có thể do agent/phiên khác cùng worktree reset vùng stage giữa chừng. Ngoài ra đã gặp: `git add -- <thư mục>/` (có `/` cuối, Git Bash trên Windows) im lặng không thêm file chưa track trong thư mục đó, trong khi `git add -v <thư mục>/*.md` thì thêm được.
 - **Cách làm:** add và commit trong CÙNG một lệnh, rồi xem `git diff --cached --name-status` ngay trước commit và đối chiếu đủ A/D/M mong đợi. Lỡ thiếu thì commit bù, không amend.
+
+## `submodule.recurse=true`: đổi nhánh repo cha làm submodule bị detach về commit cũ (2026-10-29)
+
+- **Triệu chứng:** đã fast-forward `master` của submodule, nhưng sau `git switch master` ở repo cha thì submodule đứng ở detached HEAD trỏ commit cũ, code trên đĩa "mất" thay đổi mới (commit vẫn còn trên `master` của submodule).
+- **Nguyên nhân:** với `submodule.recurse=true`, `git switch` ở repo cha tự checkout submodule về đúng commit mà nhánh đích của cha đang ghi (lúc đó vẫn là commit cũ), nên submodule bị detach.
+- **Cách làm:** merge/ff repo cha xong thì chạy `git -C <submodule> switch <nhánh>` để gắn lại nhánh, rồi kiểm `git submodule status` (không còn dấu `+`) và `git -C <submodule> branch --show-current`. Hoặc đổi nhánh repo cha TRƯỚC, rồi mới ff submodule.
