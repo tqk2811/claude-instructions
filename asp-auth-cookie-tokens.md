@@ -26,6 +26,26 @@ token (mô hình BFF: trình duyệt chỉ nói chuyện với web, web gọi AP
 - **Đăng xuất**: gọi API thu hồi phiên bằng token trong cookie (cố gắng, lỗi thì bỏ qua) rồi `SignOutAsync`.
 - **Hạn cookie** "ghi nhớ đăng nhập" không dài hơn hạn refresh token.
 
+## Thời hạn mặc định
+
+- **Access token 15 phút, refresh token 7 ngày trượt**: mỗi lần làm mới, API dời hạn phiên thành `now + 7 ngày`.
+  Mặc định KHÔNG có hạn tuyệt đối: phiên sống tới khi bị thu hồi (kick, đăng xuất, đổi mật khẩu) hoặc bỏ không
+  quá 7 ngày. Cần hạn tuyệt đối thì là tuỳ chọn cấu hình riêng (vd `MaxSessionDays`), mặc định để trống.
+- **Hạn cookie chỉ do API quyết, web KHÔNG tự tính**: lúc đăng nhập và sau mỗi lần làm mới, web đặt
+  `AuthenticationProperties.ExpiresUtc` = đúng hạn refresh token API trả về (cả cookie persistent lẫn cookie phiên;
+  cookie handler chỉ ghi `Expires` lên cookie khi `IsPersistent`). Không dùng `ExpireTimeSpan` để tính hạn, không
+  lấy min với nó.
+  - **Tắt `SlidingExpiration`** của cookie handler, đặt SAU lambda cấu hình của host để host không bật lại được:
+    sliding tự kéo vé thêm một quãng mà không biết hạn phiên, cookie sống mà phiên đã chết (xem
+    `Experiences/Csharp.md`, mục "SlidingExpiration làm cookie sống lâu hơn token").
+  - Đổi chính sách (7 → 30 ngày, bật hạn tuyệt đối) chỉ sửa cấu hình API, mọi web và client tự theo.
+  - **Why**: (2026-10-31) web quản trị đặt `ExpireTimeSpan` 8 giờ trong khi refresh token 7 ngày, người dùng phải
+    đăng nhập lại mỗi ngày dù phiên còn hạn. Hai nơi cùng quyết hạn thì lệch cấu hình là lỗi.
+- **Ô "Ghi nhớ đăng nhập" ở trang đăng nhập của mọi web**: tick thì cookie persistent (sống qua lần đóng trình
+  duyệt); không tick thì cookie phiên, mất khi đóng trình duyệt. Cả hai đều không sống quá hạn refresh token.
+- **Mỗi web một tên cookie riêng** (mặc định), kể cả khi nhiều web dùng chung một API. Chỉ dùng chung cookie khi
+  hoàn cảnh thật sự cần (vd SSO giữa các subdomain).
+
 ## Điều kiện bắt buộc phía API: refresh token KHÔNG dùng một lần
 
 - Làm mới hợp lệ thì trả access token mới; refresh token cũ VẪN dùng được tới khi hết hạn hoặc phiên bị thu hồi
