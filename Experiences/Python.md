@@ -1,5 +1,12 @@
 # Experience — Python
 
+## Windows: gọi Python bằng `py` (py launcher), không phải `python`
+
+Trên Windows, `python`/`python3` thường không có trong PATH (hoặc chỉ là alias mở Microsoft Store),
+nên `python - <<EOF ...` qua Git Bash báo `python: command not found`. Đừng bỏ qua Python rồi chuyển
+cách khác: thử `py` trước (`py --version`, `py - <<'EOF'`, `py -I script.py`). Máy cụ thể có gì thì xem
+`~/.claude/local.md`.
+
 ## `ctypes.Structure` lệch layout với struct C = hỏng ÂM THẦM — luôn assert `sizeof`
 
 `ctypes` **không** kiểm tra được struct Python có khớp struct C trong DLL hay không: nó chỉ tin
