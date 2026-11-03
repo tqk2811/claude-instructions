@@ -1,8 +1,14 @@
 # NuGet packaging notes
 
-Áp dụng cho các thư viện riêng của user (danh sách ở `~/.claude/local.md`; đóng gói bằng `dotnet pack` + `.nuspec`, version bằng GitVersion). Cấu hình chung đặt ở `ProjectBuildProperties.targets` (root repo), mỗi packable csproj `<Import Project="..\ProjectBuildProperties.targets" />`.
+Áp dụng cho các thư viện riêng của user (danh sách ở `~/.claude/local.md`; đóng gói bằng `dotnet pack` + `.nuspec`). Cấu hình chung đặt ở `ProjectBuildProperties.targets` (root repo), mỗi packable csproj `<Import Project="..\ProjectBuildProperties.targets" />`.
 
-## 1. Version scheme (version = đúng tag `vM.N.P`)
+## 1. Version scheme
+
+Có ba cách (A: một version chung theo tag; B: tag riêng từng gói; C: `<VersionPrefix>` trong csproj từng gói),
+so sánh ở mục "Thư viện NuGet" của `~/.claude/ci-release.md`. Repo đang dùng cách nào thì xem README của repo.
+Mục 1a dưới đây là cách A (và B, chỉ khác tag-prefix); cách C ở mục 1b.
+
+### 1a. Version = đúng tag `vM.N.P` (GitVersion)
 
 Mô hình phát hành chung với ứng dụng: mỗi bản = một tag `vM.N.P` user tự gắn và push = một GitHub
 Release cùng tên (CI: `~/.claude/ci-release.md`).
@@ -29,6 +35,23 @@ Set bằng target chạy **sau** GitVersion:
 - Cấu hình `GitVersion.yml`: xem `~/.claude/gitversion.md`. Property `EnableGitVersion` không tồn tại (GitVersion.MsBuild 6.8.2) → đừng dùng trong Condition.
 - **CI** (khung chung ở `~/.claude/ci-release.md`): trigger push tag `v[0-9]+.[0-9]+.[0-9]+`; chỉ publish khi commit của tag nằm trên master (`git merge-base --is-ancestor $GITHUB_SHA origin/master`); kiểm version đã pack == tên tag bỏ `v`, lệch thì fail; `dotnet nuget push --skip-duplicate` chỉ khi có secret `NUGETKEY`.
 - **Tránh downgrade**: trước khi gắn tag, check version cao nhất trên nuget.org (`https://api.nuget.org/v3-flatcontainer/<id-lower>/index.json`); tag mới phải lớn hơn. Prerelease (`1.0.0-build<date>`) nhỏ hơn stable cùng số.
+
+### 1b. Version ghi trong csproj từng gói (không GitVersion)
+
+- Mỗi packable csproj: `<PropertyGroup><VersionPrefix>M.N.P</VersionPrefix></PropertyGroup>` ngay sau dòng
+  `<Import>`. Tăng số trong commit sửa gói đó; thay đổi breaking chỉ tăng major của riêng gói đó.
+- `ProjectBuildProperties.targets` được import TRƯỚC thân csproj, nên lúc evaluate chưa thấy `VersionPrefix`:
+  - chỉ đặt `VersionSuffix` ở evaluate (vd `dev` khi không có `-p:<Prefix>Release=true`); SDK tự ghép
+    `VersionPrefix` + `VersionSuffix` thành `Version`/`PackageVersion` ở bước sau;
+  - phần cần đọc `VersionPrefix` (AssemblyVersion `Major.Minor.0.0`, FileVersion `M.N.P.0`, `NuspecProperties`)
+    đặt trong một `<Target BeforeTargets="GetAssemblyVersion;GenerateNuspec">`.
+- Đừng thử "phát hiện csproj quên khai `VersionPrefix`" bằng cách so với `1.0.0`: SDK tự gán mặc định `1.0.0`,
+  và gói mới hợp lệ cũng có thể đúng là `1.0.0`.
+- Thêm target `<Target Name="...GetPackageVersion" Returns="$(PackageVersion)" />` để CI hoặc nuspec của gói khác
+  hỏi version một gói; task `<MSBuild>` gọi target này tự kế thừa global property (Configuration, cờ release).
+- Bỏ hết dấu vết GitVersion: `PackageReference GitVersion.MsBuild`, `PackageVersion` trong
+  `Directory.Packages.props`, `GitVersion.yml` (kể cả mục trong `.slnx`), tham số `DisableGitVersionTask` trong workflow test.
+- CI: xem cách C ở `~/.claude/ci-release.md`.
 
 ## 2. `dotnet pack` + nuspec
 

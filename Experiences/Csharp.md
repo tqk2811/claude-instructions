@@ -1200,3 +1200,15 @@ Ví dụ dính bẫy: gán `StartupUri = null` trong `OnStartup` để chặn t�
 - **File là JSON thật**: dấu `\` trong `"Path"` phải escape thành `\` (`"BaseSource.Api\BaseSource.Api.csproj"`). Viết `\B`, `\U`... là JSON hỏng, VS đọc không được hoặc bỏ qua profile mà không báo rõ. Kiểm bằng một trình parse JSON (`python -m json.tool`, `ConvertFrom-Json`) trước khi báo xong.
 - **Đủ project**: trước khi liệt kê project vào profile, đọc `.sln` lấy MỌI project chạy được (API phụ như upload/file server dễ bị sót) và hỏi lại nếu không chắc profile cần những gì. Thuộc tính `"DebugTarget"` là tuỳ chọn, bỏ đi để VS dùng launch profile mặc định của project.
 - Gặp thật (2026-10-26): tạo `.slnLaunch.user` với `\` không escape và thiếu project upload API; VS không nhận file, user phải đổi lại thành `.slnLaunch`.
+
+## Razor Class Library thiếu `AddRazorSupportForMvc` thì view `.cshtml` không thành view MVC
+
+- **Triệu chứng:** đổi một class library sang `Sdk="Microsoft.NET.Sdk.Razor"` rồi dời partial `.cshtml` dùng chung vào đó; app tham chiếu nó báo `The partial view 'X' was not found`, trang 500. Build vẫn xanh, chuỗi tên view vẫn thấy trong dll nên dễ đoán nhầm sang runtime compilation hay ApplicationPart.
+- **Nguyên nhân:** Razor SDK mặc định chỉ biên dịch component; `.cshtml` kiểu MVC cần `<AddRazorSupportForMvc>true</AddRazorSupportForMvc>` trong `PropertyGroup` của thư viện.
+- **Cách khoanh vùng nhanh:** app KHÔNG bật runtime compilation mà vẫn không thấy view của thư viện thì nghi cờ này trước. (2026-11-02) đã mất một vòng sửa nhầm vào runtime compilation.
+
+## `dotnet sln add` ghi lại line ending của CẢ file `.sln`/`.slnx` (2026-11-03)
+
+- **Triệu chứng:** thêm 2 project bằng `dotnet sln <file>.slnx add ...` mà `git diff --stat` báo hàng trăm dòng đổi, còn `--ignore-cr-at-eol` chỉ vài dòng.
+- **Nguyên nhân:** lệnh ghi lại cả file theo một kiểu xuống dòng (CRLF trên Windows), kể cả khi file gốc là LF hoặc trộn.
+- **Cách làm:** sau `dotnet sln add/remove` luôn so hai con số `--stat` TRƯỚC khi commit; lệch thì khôi phục line ending từng dòng theo bản `HEAD` (dòng không đổi giữ kiểu cũ, dòng mới theo kiểu đa số) rồi kiểm lại.

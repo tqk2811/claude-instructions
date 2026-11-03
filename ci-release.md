@@ -74,10 +74,32 @@ jobs:
 
 ## Thư viện NuGet
 
-- Version = đúng tag qua GitVersion (`~/.claude/gitversion.md`, target ở
-  `~/.claude/BuildNuggetCsharpLibrary.md` mục 1): commit mang tag ra `M.N.P`, sau tag ra
-  `M.N.P-dev.<n>`. CI kiểm version của nupkg == tên tag bỏ `v`.
-- Chỉ publish khi commit của tag nằm trên master:
-  `git merge-base --is-ancestor $GITHUB_SHA origin/master` (lệch thì fail, không push).
-- `dotnet nuget push --skip-duplicate` chỉ chạy khi có secret `NUGETKEY`; không có thì bỏ qua.
-- **Tránh downgrade**: tag mới phải lớn hơn version cao nhất đã có trên nuget.org.
+Có nhiều cách đánh version và phát hành; mỗi repo chọn MỘT cách và ghi rõ trong README của repo đó.
+Đọc README/`release.yml` của repo trước khi phát hành, đừng mặc định cách A. Repo mới thì hỏi user muốn cách nào.
+
+| Cách | Version nằm ở đâu | Kích hoạt phát hành | Hợp khi |
+|---|---|---|---|
+| **A. Một version chung theo tag** | tag `vM.N.P` của cả repo (GitVersion) | user push tag `vM.N.P` | repo một gói, hoặc nhiều gói luôn đổi cùng nhau |
+| **B. Tag riêng từng gói** | tag `<Gói>/vM.N.P` (GitVersion, mỗi project `-overrideconfig tag-prefix=<Gói>/v` qua `GitVersion_CommandLineArguments`) | user push tag của gói | nhiều gói, muốn version tự suy từ tag |
+| **C. Version ghi trong csproj từng gói** | `<VersionPrefix>` trong csproj, tăng ngay trong commit sửa gói | chạy tay workflow trên master; CI chỉ push version nuget.org chưa có rồi tự gắn tag `<Gói>/vM.N.P` | nhiều gói, mỗi đợt chỉ vài gói đổi; không muốn nhớ gắn nhiều tag |
+
+Chung cho mọi cách:
+- Chỉ publish từ commit nằm trên master (A/B: `git merge-base --is-ancestor $GITHUB_SHA origin/master`;
+  C: workflow chạy trên nhánh khác thì fail rõ ràng, đừng để mọi job bị skip mà run vẫn xanh).
+- `dotnet nuget push --skip-duplicate`; xác thực bằng NuGet Trusted Publishing (OIDC, `NuGet/login`) hoặc secret API key.
+- **Tránh downgrade**: version mới phải lớn hơn version stable cao nhất đã có trên nuget.org
+  (`https://api.nuget.org/v3-flatcontainer/<id-lower>/index.json`, 404 = gói chưa từng publish).
+- Build ngoài lúc phát hành phải ra số khác bản đã phát hành (A/B: `M.N.P-dev.<n>`; C: hậu tố `-dev`, bản
+  phát hành build với một property riêng, vd `-p:<Prefix>Release=true`).
+- Release notes / GitHub Release là tuỳ chọn; gói chỉ một người dùng có thể bỏ hẳn.
+
+Riêng A/B: CI kiểm version của nupkg == tên tag bỏ tiền tố, lệch thì fail.
+
+Riêng C:
+- Gắn tag `<Gói>/vM.N.P` NGAY sau khi push từng gói trong cùng vòng lặp: tách thành bước sau thì một gói
+  lỗi giữa chừng làm các gói đã push không bao giờ được gắn tag (lần chạy lại thấy đã có trên nuget.org nên bỏ qua).
+- Gói đã có trên nuget.org mà chưa có tag (phát hành từ trước khi đổi cách): KHÔNG tự gắn tag lên commit hiện tại,
+  vì chưa chắc đó là commit đã phát hành.
+- Tag tồn tại mà version chưa có trên nuget.org: fail, bắt tăng `<VersionPrefix>` hoặc xoá tag.
+- Gói phụ thuộc gói khác trong cùng repo (nuspec viết tay): khai version của gói được phụ thuộc, KHÔNG dùng
+  `$version$` của chính gói. Lấy bằng target trả `$(PackageVersion)` gọi qua task `<MSBuild>` rồi đưa vào `NuspecProperties`.
