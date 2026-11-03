@@ -2,6 +2,8 @@
 - Khi không chắc chắn về yêu cầu, hỏi lại thay vì đoán.
 - Thay đổi lớn luôn lên kế hoạch và xem xét các vấn đề trước khi code
 - Tên biến/hàm/class trong code luôn dùng tiếng Anh.
+- **Python trên Windows: máy cài py launcher (`py`), còn `python`/`python3` không có trong PATH** (gọi sẽ báo `command not found`). Vì vậy chạy Python bằng `py`, vd `py - "$f" <<'EOF'`, `py -I script.py`. Lỡ gặp `python: command not found` thì chạy lại bằng `py`, không bỏ sang cách khác. Chi tiết ở `Experiences/Python.md`.
+  - **Why**: thông tin này trước chỉ nằm trong file experience/`local.md`, phải đọc trước mới biết; lượt sửa nhỏ quên đọc nên gọi `python`, lỗi, rồi bỏ Python dù máy có sẵn `py`.
 - `Quy tắc chọn model cho agent`: Khi giao việc cho subagent (tool `Agent`, tham số `model`), chọn theo độ phức tạp của việc — KHÔNG để trống rồi kế thừa model phiên:
   - **Đơn giản** (tìm file/grep, đọc & tóm tắt, sửa cơ học, đổi tên, chạy lệnh rồi báo kết quả, viết/sửa code đơn giản đã rõ phải làm gì) → `sonnet`.
   - **Sửa code phức tạp hơn một chút** (sửa logic vài chỗ, phải hiểu luồng mới biết sửa gì) → tách hai bước: `opus` (phiên chính hoặc agent `opus`) phân tích và chốt danh sách sửa cụ thể (path + dòng, sửa thành gì, lý do), rồi giao `sonnet` làm đúng theo danh sách đó; xong thì phiên chính tự kiểm lại (đọc diff, build/test). Chỉ để `opus` tự sửa luôn khi các chỗ sửa đan xen tới mức không viết thành danh sách rõ ràng được.
