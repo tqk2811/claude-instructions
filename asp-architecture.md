@@ -99,7 +99,7 @@ Hai cái tên nhìn giống nhau mà nghĩa khác nhau, đừng lẫn:
 2. `Pages/Product/Index.cshtml.cs` → `OnPostCreateAsync`: kiểm quyền hiển thị, `ValidateOnly(Input)`,
    rồi `_session.CallAsync((api, ct) => api.Product.CreateAsync(new CreateProductRequestVM{...}, ct))`.
 3. `NodeApiSession` gắn bearer từ cookie phiên, gọi `INodeApi.Product` (typed client), gặp 401
-   thì refresh token đúng một lần rồi gọi lại.
+   thì coi phiên đã hết: xoá cookie, về trang đăng nhập (không refresh, không gọi lại; xem `asp-auth-session.md`).
 4. `ProductControllerImplement.CreateAsync` → `_api.Build().WithUrlPostJson("api/product", model).ExecuteApiAsync<ProductVM>()`.
 5. `ProductController.CreateAsync` (implement `INodeProductController`): kiểm quyền bằng
    `NodePermissions`, map VM → `CreateProductCommand`, gọi `IProductService.CreateAsync`, trả THẲNG
@@ -379,9 +379,9 @@ public sealed class ProductController : ControllerBase, INodeProductController
   trong form + `[FromFormJson("optionsJson")]`, thân thô `[FromRawBody]` (đều ở `Api.Core/ModelBinding`).
   Trả file: action trả `Task<Stream>` + `Response.SetFileDownload(contentType, fileName)`. SSE:
   `Response.StartServerSentEventsAsync()` rồi ghi thẳng. Endpoint không muốn bọc vỏ: `[RawResponse]`.
-- `Program.cs` theo thứ tự: Serilog (console + file rolling, template file có ngày đầy đủ) → JWT
-  (`OnTokenValidated` tra DB thu hồi phiên + thay claim vai bằng vai thật; `OnChallenge` trả
-  `ApiErrorResponse` mã `TOKEN_REVOKED`) → `AddAuthorization` (policy hỏi QUYỀN, không `RequireRole` tên
+- `Program.cs` theo thứ tự: Serilog (console + file rolling, template file có ngày đầy đủ) → xác thực
+  session token (AuthenticationHandler riêng tra phiên qua cache, vai/quyền lấy từ DB; challenge trả
+  `ApiErrorResponse` mã lỗi phiên; xem `asp-auth-session.md`) → `AddAuthorization` (policy hỏi QUYỀN, không `RequireRole` tên
   vai) → `AddOpenApi` + Scalar (chỉ Development) → `AddApplicationServices` + `Add<App>Services` →
   `AddControllers(o => { o.Filters.Add<ApiEnvelopeResultFilter>(); o.ModelBinderProviders.Insert(0, …); })
   .AddNewtonsoftJson(o => <P>JsonSettings.Apply(o.SerializerSettings))
@@ -392,12 +392,12 @@ public sealed class ProductController : ControllerBase, INodeProductController
 - `ExceptionWrapperMiddleware`: `switch` exception → status (`ApiErrorException`, `ServiceException`,
   `AuthException` → 401, `FieldTooLongException` → 400 kèm `field`, còn lại 500 `INTERNAL_ERROR` + `traceId`);
   4xx log `Warning`, 5xx log `Error`; kiểm `Response.HasStarted` trước khi ghi.
-- Cấu hình bắt buộc (`ConnectionStrings`, `Jwt:SigningKey`, `Central:BaseUrl`…) **KHÔNG có giá trị mặc
+- Cấu hình bắt buộc (`ConnectionStrings`, `Central:BaseUrl`…) **KHÔNG có giá trị mặc
   định** — thiếu thì ném `InvalidOperationException` lúc khởi động với tên khoá, không lùi về localhost.
 - `Properties/launchSettings.json` phải khai `ASPNETCORE_ENVIRONMENT=Development` cho từng profile; cổng
   cố định, ghi vào bản đồ cổng của project.
 
-### 4.7 Client typed (`<P>.Integration.Api`) — dùng bộ tích hợp ASP + thư viện HTTP nội bộ (tên gói ở `local.md`)
+### 4.7 Client typed (`<P>.Integration.Api`) — dùng `TqkLibrary.Asp.ToolKit.Integration` + `TqkLibrary.Http` (NuGet public)
 
 ```csharp
 public interface INodeApi : IBaseAddress
@@ -478,11 +478,11 @@ Pages/
 │   └── _<X>Modals.cshtml
 └── Dashboard/<Feature>/Index.cshtml(.cs)   # khu quản trị, khoá cả thư mục bằng AuthorizeFolder
 Infrastructure/
-├── <App>ApiSession.cs          # bọc I<App>Api: bearer từ cookie, 401 → refresh một lần → gọi lại; SemaphoreSlim cho lời gọi song song
+├── <App>ApiSession.cs          # bọc I<App>Api: gắn session token từ cookie làm bearer; 401 → SessionExpiredException → xoá cookie, về đăng nhập
 ├── PageJson.cs                 # Ok/Fail/Invalid/Fragment/FromApiException + ValidateOnly(this PageModel, model, prefix)
 ├── PartialRenderer.cs          # render partial → string cho JSON
 ├── PagerModel.cs               # phân trang, khoá query là "p" (KHÔNG BAO GIỜ "page")
-├── <App>Auth.cs                # tên cookie, policy, StoreTokens, SignOutAsync, hằng thời hạn
+├── <App>Auth.cs                # tên cookie, policy, SignInAsync (token + sid + UserId, hạn = trần tuyệt đối từ API), SignOutAsync
 ├── <App>SessionExceptionFilter.cs / <App>SessionExpiredException.cs
 ├── <App>PermissionsMiddleware.cs # hỏi API quyền của người gọi MỖI request, gắn vào HttpContext.User (cookie chỉ giữ danh tính)
 ├── StatusBadge.cs, Breadcrumb.cs, RequestExtensions.cs (IsAjax, ReturnUrlFor)

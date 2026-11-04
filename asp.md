@@ -1,8 +1,15 @@
 - Khi cần xem log của host đã deploy qua HTTP (endpoint `/_logs` bảo vệ bằng header token, ghi log tệp theo ngày bằng log4net), đọc `~/.claude/asp-log-reader.md` trước.
 - Khi thêm hoặc sửa cache dữ liệu (cache ở API hoặc web gọi API, xoá cache khi ghi, `IMemoryCache`/`HybridCache`/OutputCache, header cache file tĩnh), đọc `~/.claude/asp-cache.md` trước.
-- Khi web (MVC/Razor) đăng nhập/gọi API bằng access token + refresh token (cookie auth, làm mới token, đăng xuất, lấy quyền người dùng từ API), đọc `~/.claude/asp-auth-cookie-tokens.md` trước.
+- Khi web (MVC/Razor) đăng nhập/gọi API riêng (cookie auth, session token, bearer, đăng xuất, thu hồi phiên, lấy quyền người dùng từ API) hoặc API xác thực phiên của web, đọc `~/.claude/asp-auth-session.md` trước.
 - Khi làm chức năng upload/download file người dùng (sổ file trong DB, link `/file/{id}/{tên}`, file công khai/riêng tư, link có ký, proxy file giữa các host, bộ dọn file mồ côi, cache file qua CDN), đọc `~/.claude/asp-file-storage.md` trước.
 - Mọi thao tác database phải nằm trong service tương ứng.
+- `Tên cookie auth của web`: web nào chưa đặt tên cookie riêng (`options.Cookie.Name` trong `AddCookie`/`ConfigureApplicationCookie` đang để mặc định `.AspNetCore.Cookies`/`.AspNetCore.Identity.Application`) thì đặt tên trong khối `#if DEBUG` bằng tên project, lấy qua tên assembly thay vì gõ chuỗi cứng (đổi tên/copy project không phải sửa theo):
+    ```csharp
+    #if DEBUG
+        options.Cookie.Name = typeof(Startup).Assembly.GetName().Name; // Program.cs top-level: typeof(Program)
+    #endif
+    ```
+    + **Why**: cookie phân biệt theo host chứ không theo port, nên khi chạy local nhiều web cùng `localhost` (web + admin) dùng tên mặc định sẽ đè cookie đăng nhập của nhau, đăng nhập bên này thì văng bên kia. Chỉ đặt trong DEBUG để không đổi tên cookie trên production (đổi sẽ bắt mọi user đăng nhập lại).
 - `POST luôn đi bằng AJAX, GET đi thẳng trên URL`:
     + Mọi thao tác ghi (POST) phải gửi bằng `fetch`/AJAX và handler trả **JSON**, không `return Page()`.
       POST thẳng bằng form thì URL hiện tại là một request POST, F5 là trình duyệt hỏi "gửi lại biểu
