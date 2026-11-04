@@ -1212,3 +1212,9 @@ Ví dụ dính bẫy: gán `StartupUri = null` trong `OnStartup` để chặn t�
 - **Triệu chứng:** thêm 2 project bằng `dotnet sln <file>.slnx add ...` mà `git diff --stat` báo hàng trăm dòng đổi, còn `--ignore-cr-at-eol` chỉ vài dòng.
 - **Nguyên nhân:** lệnh ghi lại cả file theo một kiểu xuống dòng (CRLF trên Windows), kể cả khi file gốc là LF hoặc trộn.
 - **Cách làm:** sau `dotnet sln add/remove` luôn so hai con số `--stat` TRƯỚC khi commit; lệch thì khôi phục line ending từng dòng theo bản `HEAD` (dòng không đổi giữ kiểu cũ, dòng mới theo kiểu đa số) rồi kiểm lại.
+
+## Minimal API: lambda `async (HttpContext c) => Results.Text(...)` trả body rỗng (2026-11-04)
+
+- **Triệu chứng:** endpoint test dựng bằng `app.MapGet("/x", async (HttpContext c) => Results.Text("..."))` trả 200 nhưng body rỗng, assert nội dung đỏ.
+- **Nguyên nhân:** lambda có đúng một tham số `HttpContext` và trả `Task` khớp overload `RequestDelegate`, nên `IResult` trả về bị bỏ, không được thực thi.
+- **Cách làm:** thêm một tham số khác (vd `CancellationToken ct`) để ép vào overload `Delegate`, hoặc ghi thẳng `await c.Response.WriteAsync(...)` thay vì trả `IResult`.

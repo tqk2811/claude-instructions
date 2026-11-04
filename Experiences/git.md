@@ -284,3 +284,8 @@ Xử lý: `git config core.longpaths true` (chỉ trong bản clone) rồi `git 
 - **Triệu chứng:** đã fast-forward `master` của submodule, nhưng sau `git switch master` ở repo cha thì submodule đứng ở detached HEAD trỏ commit cũ, code trên đĩa "mất" thay đổi mới (commit vẫn còn trên `master` của submodule).
 - **Nguyên nhân:** với `submodule.recurse=true`, `git switch` ở repo cha tự checkout submodule về đúng commit mà nhánh đích của cha đang ghi (lúc đó vẫn là commit cũ), nên submodule bị detach.
 - **Cách làm:** merge/ff repo cha xong thì chạy `git -C <submodule> switch <nhánh>` để gắn lại nhánh, rồi kiểm `git submodule status` (không còn dấu `+`) và `git -C <submodule> branch --show-current`. Hoặc đổi nhánh repo cha TRƯỚC, rồi mới ff submodule.
+
+## Giải conflict bằng lệnh thay chữ rồi `git commit` trong cùng chuỗi `&&`: marker lọt vào commit
+
+- `perl`/`sed` thay khối `<<<<<<< ... >>>>>>>` mà regex không khớp (vd working copy CRLF, regex chỉ viết `\n`) thì file giữ nguyên marker; `grep -c` in số marker > 0 nhưng vẫn trả mã 0 nên `&& git add && git commit` chạy tiếp và tạo merge commit hỏng.
+- Regex viết `\r?\n`. Kiểm marker là lệnh RIÊNG, đọc kết quả (phải là 0) rồi mới `git add`/`git commit`; hoặc dùng `! grep -q ...` để chuỗi dừng khi còn marker. (2026-11-02)
