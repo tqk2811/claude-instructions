@@ -10,7 +10,11 @@
 
 ## Dạng lưu
 
-- Backlog nằm trong thư mục tài liệu trong git của project (`docs/` hoặc `Docs/`, theo thư mục project đang dùng; chưa có thì tạo).
+- Backlog nằm trong thư mục tài liệu trong git của project (`docs/`, `Docs/` hoặc `.docs/`, theo thư mục project đang dùng; chưa có thì tạo `docs/`).
+- **Mỗi repo một backlog riêng, mục nằm ở repo chứa chỗ sửa CHÍNH**: submodule, thư viện tách repo, repo được vendor vào đều là project riêng. Lỗi/việc nằm trong code của submodule thì ghi vào backlog của chính submodule đó (đường dẫn trong mục tính từ gốc submodule), KHÔNG ghi vào backlog của repo cha chỉ vì phiên đang mở ở repo cha. Repo cha chỉ giữ việc mà bản sửa nằm ở code của repo cha (kể cả "cách app dùng thư viện").
+  - Việc cần sửa ở cả hai phía: tách thành mục riêng ở mỗi repo cho phần của repo đó; phần dính nhau ngang bằng thì để ở repo cha, repo kia ghi một dòng link trỏ sang.
+  - Commit mục backlog của submodule là commit trong repo submodule (theo luật branch/commit của repo đó), rồi repo cha cập nhật con trỏ submodule.
+  - **Why**: (2026-11-08) backlog repo app gom cả lỗi của 3 submodule; mở phiên ở repo thư viện không thấy việc của nó, sửa xong ở thư viện lại quên xoá mục bên app.
 - Project nhỏ dùng một file `Backlog-vi.md`.
 - Khi file vượt ~800 dòng hoặc project có nhiều thành phần tách biệt thì chuyển sang thư mục `Backlog/`: `README-vi.md` là mục lục (bảng file → phạm vi, cách chọn file), mỗi khu vực một file `<Khu>-vi.md`. Cách chia khu vực của từng project ghi trong `CLAUDE.md` của project đó.
 - **Ghi mục mới**: đặt vào file của khu vực chứa chỗ sửa CHÍNH; việc thật sự chạm nhiều khu vực ngang nhau thì vào file chung (vd `Shared-vi.md`). Không chép một mục sang nhiều file; cần thì file kia ghi một dòng link trỏ sang. Không chắc thuộc đâu thì tra bảng phạm vi ở `README-vi.md`. KHÔNG chia file theo mức nặng nhẹ (mức đổi theo thời gian thì phải dời mục, đứt lịch sử).
