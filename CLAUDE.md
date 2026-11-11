@@ -4,6 +4,8 @@
 - Khi không chắc chắn về yêu cầu, hỏi lại thay vì đoán.
 - Thay đổi lớn luôn lên kế hoạch và xem xét các vấn đề trước khi code.
 - Tên biến/hàm/class trong code luôn dùng tiếng Anh.
+- `Quy tắc gom phần giống nhau`: thấy nhiều bảng/class có cùng một nhóm cột hoặc chức năng giống nhau (vd nhiều bảng đều có cột nội dung soạn thảo HTML + Markdown + bảng tệp đi kèm) thì HỎI user có tách nhóm đó ra thành bảng/thành phần dùng chung không, không tự quyết. User không đồng ý tách thì ghi comment ngắn tại chỗ trong code (vd ở entity/configuration) nói rằng đã cân nhắc gom chung và user chọn giữ riêng, kèm lý do nếu có.
+  - **Why**: phần giống nhau nằm rải rác nhiều nơi thì khó quản lý; comment giữ lại quyết định để lần sau không đề xuất lại.
 - **Python trên Windows chạy bằng `py`** (py launcher), vd `py - "$f" <<'EOF'`, `py -I script.py`. `python`/`python3` không có trong PATH; lỡ gặp `python: command not found` thì chạy lại bằng `py`, không bỏ sang cách khác. Chi tiết ở `Experiences/Python.md`.
   - **Why**: thông tin này từng chỉ nằm trong file experience; lượt sửa nhỏ quên đọc nên gọi `python`, lỗi, rồi bỏ Python dù máy có sẵn `py`.
 
