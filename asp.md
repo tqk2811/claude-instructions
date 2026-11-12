@@ -1,4 +1,5 @@
 - Khi cần xem log của host đã deploy qua HTTP (endpoint `/_logs` bảo vệ bằng header token, ghi log tệp theo ngày bằng log4net), đọc `~/.claude/asp-log-reader.md` trước.
+- Khi deploy lên IIS hoặc viết script cấu hình IIS (app pool, AlwaysRunning, idleTimeout, preload, recycle, Rapid-Fail Protection, startupTimeLimit), đọc `~/.claude/asp-iis.md` trước.
 - Khi thêm hoặc sửa cache dữ liệu (cache ở API hoặc web gọi API, xoá cache khi ghi, `IMemoryCache`/`HybridCache`/OutputCache, header cache file tĩnh), đọc `~/.claude/asp-cache.md` trước.
 - Khi web (MVC/Razor) đăng nhập/gọi API riêng (cookie auth, session token, bearer, đăng xuất, thu hồi phiên, lấy quyền người dùng từ API) hoặc API xác thực phiên của web, đọc `~/.claude/asp-auth-session.md` trước.
 - Khi làm chức năng upload/download file người dùng (sổ file trong DB, link `/file/{id}/{tên}`, file công khai/riêng tư, link có ký, proxy file giữa các host, bộ dọn file mồ côi, cache file qua CDN), đọc `~/.claude/asp-file-storage.md` trước.

@@ -25,6 +25,7 @@ Gặp đúng tình huống thì đọc file tương ứng TRƯỚC khi làm. M�
 | Entity Framework Core (migration, `migrationBuilder.Sql`, raw SQL, `DbContext`, `dotnet ef migrations script`) | `~/.claude/database-EF.md` |
 | Giao diện người dùng ở mọi nền tảng (WPF/WinForms/web/mobile: grid, list, table, cuộn, phím tắt…) | `~/.claude/ui-ux.md` |
 | Project ASP.NET (.cshtml/Razor/wwwroot/Startup/Program.cs ASP) | `~/.claude/asp.md` |
+| Deploy ASP.NET lên IIS, script cấu hình IIS (app pool, site, `WebAdministration`) | `~/.claude/asp-iis.md` |
 | ASP.NET: dựng project mới; thêm project/tầng/bảng/entity/repository/service/controller/trang Razor/client typed/tài nguyên i18n; refactor lớn hoặc tạo mới trong project cũ | `~/.claude/asp-architecture.md` (xem `Quy tắc kiến trúc ASP`) |
 | Android SDK/NDK (`app_process` bằng javac + d8, `ANDROID_HOME`, `android.jar`, `build-tools/<ver>/d8`, NDK) | `~/.claude/android.md` |
 | Chrome (headless, `--screenshot`, `--dump-dom`, CDP/`--remote-debugging-port`), và **mọi lúc định giết `chrome.exe`** | `~/.claude/chrome.md` |
