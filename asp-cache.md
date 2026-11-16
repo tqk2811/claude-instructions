@@ -39,3 +39,8 @@ Chọn theo số lượt gọi TRÙNG MỘT KHOÁ cùng lúc, không theo tầng
 
 - `UseStaticFiles` + `OnPrepareResponse`: URL có `?v=` (`asp-append-version`) → `public,max-age=31536000,immutable`;
   không version → vài giờ. Thư mục upload chỉ để `immutable` khi tên tệp sinh mới mỗi lần ghi (Guid).
+- Development: thêm nhánh `env.IsDevelopment()` trong `OnPrepareResponse` đặt `Cache-Control: no-cache` cho mọi file tĩnh,
+  để thay ảnh/CSS/JS trong `wwwroot` là thấy ngay qua ETag (304 nếu không đổi), không phải Ctrl+F5.
+  + **Why**: (2026-11-05) ghi đè ảnh cùng tên, server đã trả bản mới nhưng trình duyệt vẫn hiện bản cũ
+    vì ảnh `<img>` không có `asp-append-version`; user tưởng sửa chưa ăn.
+  + Sau khi bật vẫn phải Ctrl+F5 một lần cho các file trình duyệt đã cache từ trước.

@@ -51,6 +51,8 @@ Agent không thấy lịch sử phiên, nên brief phải có:
 - Lệnh tự chạy trong phiên chính cũng lọc output (`head`/`tail`/chỉ lấy dòng lỗi) thay vì in hết.
 - Lệnh dài (test, build, script chạy lâu) thì ghi log ĐẦY ĐỦ ra file trong scratchpad (vd `tee`, `dotnet test --logger "console;verbosity=normal"` hoặc `trx`) rồi mới lọc; KHÔNG chạy chế độ ít log (`-v q`) rồi chỉ lấy dòng tổng kết. Cần xem chi tiết (bài nào đỏ, lỗi gì) thì đọc lại file log thay vì chạy lại.
   - **Why**: (2026-10-09) bộ E2E ~14 phút chạy với `-v q` chỉ báo "10 đỏ" mà không có tên bài, phải chạy lại cả bộ mới biết bài nào.
+- Kết quả lệnh nền PHẢI lấy từ chính file log: đợi thông báo hoàn tất rồi `grep` file log (vd `Passed!|Failed!|\[FAIL\]| error `) và báo số bài qua/đỏ. KHÔNG nối `| grep` vào cuối lệnh nền rồi trông vào output của task, và KHÔNG bao giờ báo "không rõ kết quả" khi chưa mở file log. Đường dẫn log là đường dẫn tuyệt đối trong scratchpad, không dùng `$TEMP`.
+  - **Why**: (2026-11-11) bộ test ~30 phút ghi log đủ ra `$TEMP`, nhưng output lọc của task nền trống nên báo user "chưa biết qua hay đỏ"; mở log thì thấy qua hết. User phải nhắc lại luật.
 
 ### Chạy nền, không khoá phiên chính
 

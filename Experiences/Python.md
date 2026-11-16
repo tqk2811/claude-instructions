@@ -153,3 +153,8 @@ numpy chứ không riêng đường dẫn file.
 **Xử lý:** gói không thật sự dùng torchcodec thì `pip uninstall -y torchcodec` ngay trong script
 setup. Đưa audio cho pipeline dạng `{"raw": np_array_mono, "sampling_rate": sr}` (đọc bằng
 `soundfile`) để không phụ thuộc bộ giải mã audio nào.
+
+## Chuỗi escape trong script Python gửi qua Bash tool bị mất một lớp backslash (2026-11-16)
+
+- **Triệu chứng:** viết `"\\r"` hay `"\\x1b"` trong heredoc `py - <<'EOF'` để ghi chuỗi chữ `\r` vào file, nhưng file nhận ký tự CR/ESC thật; code C# hỏng (`CS1010 Newline in constant`), Markdown dính ký tự điều khiển vô hình.
+- **Cách làm:** dựng backslash bằng `chr(92)` (CR = `chr(13)`, ESC = `chr(27)`), hoặc sửa bằng tool Edit/Write. Xong thì kiểm bằng `od -c` hay `grep -c` chuỗi chữ cần có.

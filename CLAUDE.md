@@ -15,7 +15,7 @@ Gặp đúng tình huống thì đọc file tương ứng TRƯỚC khi làm. M�
 | Khi | Đọc |
 |---|---|
 | Thao tác git (commit/push/rebase/reset/merge/cherry-pick/clone tạm…) | `~/.claude/git.md` |
-| Lần đầu trong phiên gọi `Agent`/`Workflow`/fork, chạy lệnh nền dài, giao việc cho CLI agent bên ngoài | `~/.claude/agents.md` |
+| Lên kế hoạch cho việc trải nhiều file/tầng hoặc sắp tự viết code quá vài chỗ (TRƯỚC dòng code đầu tiên); lần đầu trong phiên gọi `Agent`/`Workflow`/fork, chạy lệnh nền dài, giao việc cho CLI agent bên ngoài | `~/.claude/agents.md` |
 | Sắp giao agent review một đợt sửa, hoặc phân vân đợt sửa có cần review không | `~/.claude/review.md` |
 | Lần ghi memory đầu tiên trong phiên | `~/.claude/memory.md` |
 | Sửa lỗi trong workspace có bộ test | `~/.claude/testing.md` |
@@ -53,7 +53,9 @@ Gặp đúng tình huống thì đọc file tương ứng TRƯỚC khi làm. M�
 ## Agent & việc nặng (chi tiết ở `agents.md`)
 
 - Luôn truyền `model` tường minh cho subagent: việc đơn giản → `sonnet`; phân tích, việc khó → `opus`. **`fable` cho BẤT KỲ subagent nào (kể cả review, kể cả fork khi phiên đang chạy `fable`) phải xin phép user trước từng lần.** Mỗi lần giao việc báo agent nào → model nào, vì sao, và `subagent_tokens` khi xong.
-- Phiên chính điều phối; việc làm phình ngữ cảnh giao agent. Subagent KHÔNG tạo subagent con và không tạo cron (ghi rõ trong brief). Agent và lệnh dài chạy nền, không poll; log đầy đủ ra file trong scratchpad rồi mới lọc.
+- Phiên chính điều phối; việc làm phình ngữ cảnh giao agent. **Việc code trải nhiều file/tầng (tính năng mới, refactor) thì phiên chính chỉ khảo sát + chốt thiết kế, phần viết code giao subagent theo brief; KHÔNG tự viết dần trong phiên chính.** Tự làm chỉ khi sửa gọn 1–2 chỗ đã biết. Luật này áp NGAY từ lúc lập kế hoạch, không đợi tới khi định gọi `Agent` mới đọc `agents.md`.
+  - **Why**: (2026-11-16) trigger cũ chỉ là "lần đầu gọi `Agent`", nên phiên chính không bao giờ gọi `Agent` thì cũng không đọc `agents.md`, và tự code cả tính năng nhiều tầng; user phải nhắc.
+- Subagent KHÔNG tạo subagent con và không tạo cron (ghi rõ trong brief). Agent và lệnh dài chạy nền, không poll; log đầy đủ ra file trong scratchpad rồi mới lọc.
 - **Sau compact, việc ĐẦU TIÊN là kiểm lại cron giữ cache** (`CronList`), xem `agents.md`.
 
 ## Git & commit (chi tiết ở `git.md`, `review.md`, `testing.md`)

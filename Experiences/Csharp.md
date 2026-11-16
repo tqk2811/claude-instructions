@@ -1218,3 +1218,24 @@ Ví dụ dính bẫy: gán `StartupUri = null` trong `OnStartup` để chặn t�
 - **Triệu chứng:** endpoint test dựng bằng `app.MapGet("/x", async (HttpContext c) => Results.Text("..."))` trả 200 nhưng body rỗng, assert nội dung đỏ.
 - **Nguyên nhân:** lambda có đúng một tham số `HttpContext` và trả `Task` khớp overload `RequestDelegate`, nên `IResult` trả về bị bỏ, không được thực thi.
 - **Cách làm:** thêm một tham số khác (vd `CancellationToken ct`) để ép vào overload `Delegate`, hoặc ghi thẳng `await c.Response.WriteAsync(...)` thay vì trả `IResult`.
+
+## WPF-UI: `SystemThemeWatcher.UnWatch(window)` trong `OnClosed` ném "Could not get window handle"
+- Lúc `Closed` chạy thì HWND đã huỷ; `UnWatch` cần handle nên ném, và exception đó cắt ngang các handler `Closed` phía sau (vd handler gỡ tham chiếu tới cửa sổ) ⇒ lần mở lại gọi `Show()` trên cửa sổ đã đóng. Gọi `UnWatch` trong `OnClosing` (khi `!e.Cancel`).
+- (2026-11-05) Kèm bài học: app tray WPF muốn nhẹ RAM thì cửa sổ phải `Close()` thật và dựng lại khi mở, gỡ mọi event đăng ký vào singleton/static trong `OnClosed`; đo bằng "Working Set - Private" nhưng nhớ Private Bytes/commit không giảm vì assembly WPF native không unload.
+
+## Overload generic `M<T>(T x)` nuốt mất overload `M(IEnumerable<X>)` khi truyền `List`/`IReadOnlyList`
+
+- Triệu chứng (2026-11-06, MCP C# SDK): `builder.WithTools(toolTypes, jsonOptions)` với `toolTypes` kiểu `IReadOnlyList<Type>` biên dịch êm, nhưng server đăng ký **0 tool** (`tools/list` trả "Method is not available").
+- Nguyên nhân: SDK có cả `WithTools(IEnumerable<Type>, JsonSerializerOptions)` lẫn `WithTools<TToolType>(TToolType target, JsonSerializerOptions)`. Overload generic suy ra `T = IReadOnlyList<Type>` là khớp CHÍNH XÁC, thắng overload cần chuyển kiểu sang `IEnumerable<Type>`; nó coi cả cái list là "đối tượng chứa tool" và không thấy method nào.
+- Sửa: ép kiểu tường minh `(IEnumerable<Type>)toolTypes` (hoặc truyền mảng/biến khai báo đúng kiểu tham số) và để comment vì sao.
+- Kiểm nhanh khi nghi: resolve tập đăng ký từ DI (`GetServices<McpServerTool>().Count()`) thay vì đoán ở tầng giao thức.
+
+## Newtonsoft ghi đè vào giá trị khởi tạo sẵn (2026-11-07)
+
+- Bẫy: property `{ get; init; } = Shared.Default` (record dùng chung) + Newtonsoft mặc định `ObjectCreationHandling.Auto` thì khi đọc JSON nó KHÔNG tạo object mới mà ghi qua setter `init` vào chính instance dùng chung. Singleton bị đè, mọi VM trỏ vào nó lẫn giá trị (cái đọc sau thắng). Test đọc lại một object đơn lẻ vẫn xanh; chỉ lộ khi có từ 2 object cùng trỏ vào giá trị mặc định đó.
+- Sửa: đặt `ObjectCreationHandling.Replace` trong settings dùng chung (hoặc khởi tạo bằng instance mới, không dùng singleton). Test hồi quy phải đọc ít nhất 2 object và khẳng định singleton không đổi.
+
+## Test C# chập chờn trên runner CI (macOS, Ubuntu)
+- macOS chỉ có sẵn `127.0.0.1` trên loopback: bind `127.0.0.2` lỗi `Can't assign requested address` mỗi lần chạy, nên bỏ qua riêng phần cần địa chỉ đó (`Assert.SkipWhen(OperatingSystem.IsMacOS(), ...)`).
+- Mức chặn chống treo phải rộng (30 giây): `Task.Delay`/`Thread.Sleep` vài ms trên runner macOS có thể dài gấp nhiều lần, nên vòng lặp nhiều bước vượt mức chặn 5 giây dù không treo.
+- Test đọc gói từ hàng đợi có chủ đích bỏ gói, hoặc dùng test double bị nhiều luồng gọi, phải tính đường đua: giãn nhịp theo số gói đã thật sự đi, dùng collection đồng thời. Mỗi run CI có thể chỉ lộ một test, nên thống kê `[FAIL]` qua nhiều run trước khi kết luận đã hết.

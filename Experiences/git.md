@@ -289,3 +289,8 @@ Xử lý: `git config core.longpaths true` (chỉ trong bản clone) rồi `git 
 
 - `perl`/`sed` thay khối `<<<<<<< ... >>>>>>>` mà regex không khớp (vd working copy CRLF, regex chỉ viết `\n`) thì file giữ nguyên marker; `grep -c` in số marker > 0 nhưng vẫn trả mã 0 nên `&& git add && git commit` chạy tiếp và tạo merge commit hỏng.
 - Regex viết `\r?\n`. Kiểm marker là lệnh RIÊNG, đọc kết quả (phải là 0) rồi mới `git add`/`git commit`; hoặc dùng `! grep -q ...` để chuỗi dừng khi còn marker. (2026-11-02)
+
+## `git checkout` repo cha làm submodule rời nhánh khi `submodule.recurse` bật
+
+- Merge submodule về `master` trước rồi `git checkout master` ở repo cha: submodule bị đưa về commit mà `master` CŨ của repo cha trỏ tới, ở trạng thái detached, kể cả sau khi merge repo cha xong (`git status` báo ` M <submodule>`).
+- Cách xử lý: làm xong merge repo cha thì vào submodule `git checkout master`, rồi kiểm `git submodule status` không còn dấu `+`.

@@ -171,3 +171,7 @@ tín hiệu "máy đang chạy" — chặn nhầm thứ mà quy tắc này khôn
 Bẫy kèm theo: nếu hiệu ứng thường dựa vào `width: 0 → n` (kiểu ba chấm chạy bằng cắt bề rộng) thì
 nhánh reduce PHẢI trả `width: auto`, không thì animation tắt và bề rộng đứng ở khung hình đầu = 0 —
 mất luôn nội dung.
+
+## `@import` trong CSS không được cache-busting như `<link asp-append-version>`
+
+(2026-11-06) File nạp bằng `@import url(...)` không mang `?v=`, nên server trả `max-age` dài cho file không có version là trình duyệt giữ bản cũ, Ctrl+F5 cũng không chắc lấy lại. Triệu chứng: phần CSS cũ trong file đó vẫn áp, phần mới thêm thì không. File CSS hay sửa luôn nạp bằng `<link>` kèm version (ASP.NET: `asp-append-version="true"`), không `@import`.

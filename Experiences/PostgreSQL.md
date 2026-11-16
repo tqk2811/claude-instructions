@@ -31,3 +31,9 @@ Context cấu hình `EnableRetryOnFailure` không cho `BeginTransaction` tay r�
 Trong test chen khoá, lỗi này làm một lượt khác chờ khoá mãi → `await` không bao giờ xong, cả lần chạy treo không báo gì.
 Phía "giữ khoá" trong test dùng `NpgsqlConnection` trần + SQL thô; luôn `WaitAsync(timeout)` các task đang chờ và chạy
 `dotnet test --blame-hang-timeout`.
+
+## `psql.exe` (Windows) trong vòng lặp Git Bash: kết quả dính `\r`
+
+- **Triệu chứng**: `for d in $(psql -tAc "select datname ...")` rồi `DROP DATABASE "$d"` báo `database "..." does not exist` cho mọi dòng trừ dòng cuối.
+- **Nguyên nhân**: `psql.exe` bản Windows in CRLF; bash tách theo `\n` nên mỗi tên còn `\r` ở cuối (msys không hiện ra khi in).
+- **Cách làm**: luôn `| tr -d '\r'` sau `psql` khi lấy giá trị đưa vào lệnh khác. (2026-11-05)
