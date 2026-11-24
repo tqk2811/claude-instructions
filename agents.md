@@ -68,6 +68,7 @@ Agent không thấy lịch sử phiên, nên brief phải có:
 - Khi user nói rời máy, đi ngủ, hay giao chạy tới một giờ hẹn: TRƯỚC khi giao đợt việc đầu, gọi tool MCP `get_usage` của server claude-usage để xem phần trăm hạn mức (phiên/tuần) đã dùng và giờ reset.
 - Từ đó chia ngân sách: số agent chạy song song, model (`opus` hay `sonnet`), độ lớn mỗi đợt, sao cho token còn đủ tới lúc user quay lại hoặc tới giờ reset. Gần cạn thì giảm số agent song song và chuyển việc đơn giản sang `sonnet`, ưu tiên việc giá trị cao (merge/test/push những gì đã xong) trước việc mới.
 - Kiểm lại `get_usage` mỗi khi sắp giao đợt việc mới và trong các lượt cron giữ cache. Chạm ngưỡng user đặt thì dừng giao việc mới, chốt phần đã xong và ghi tiến độ vào memory.
+- **Phiên 5 giờ gần cạn** (vd từ ~85% trở lên, hoặc phần còn lại không đủ cho đợt việc kế tiếp): không giao việc mới. Để các agent đang chạy làm xong, chốt phần đã xong (commit/push nhánh phụ, ghi tiến độ vào memory), rồi đặt cron một lần (`CronCreate`, `recurring: false`) vào vài phút sau `resets_at_local` của phiên 5 giờ, prompt nêu rõ việc làm tiếp (đọc memory tiến độ, gọi lại `get_usage`, giao đợt kế). Tới giờ đó thì kiểm usage rồi làm tiếp. Hạn mức tuần gần cạn thì không chờ reset phiên 5 giờ mà dừng hẳn, báo user.
 - Server claude-usage không kết nối được thì thử gọi lại một lần; vẫn lỗi thì chạy dè dặt (ít agent, ưu tiên `sonnet`) và báo user.
 - **Why**: (2026-11-25) user muốn việc chạy qua đêm không bị cạn token giữa chừng, bỏ dở các nhánh chưa merge.
 
