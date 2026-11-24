@@ -57,6 +57,7 @@ Gặp đúng tình huống thì đọc file tương ứng TRƯỚC khi làm. M�
   - **Why**: (2026-11-16) trigger cũ chỉ là "lần đầu gọi `Agent`", nên phiên chính không bao giờ gọi `Agent` thì cũng không đọc `agents.md`, và tự code cả tính năng nhiều tầng; user phải nhắc.
 - Subagent KHÔNG tạo subagent con và không tạo cron (ghi rõ trong brief). Agent và lệnh dài chạy nền, không poll; log đầy đủ ra file trong scratchpad rồi mới lọc.
 - **Sau compact, việc ĐẦU TIÊN là kiểm lại cron giữ cache** (`CronList`), xem `agents.md`.
+- **User báo rời máy/đi ngủ**: trước khi giao việc, gọi MCP claude-usage (`get_usage`) xem hạn mức còn lại và giờ reset, rồi chia số agent/model/khối việc cho đủ tới lúc user quay lại, không để cạn token giữa chừng. Kiểm lại usage mỗi đợt giao việc mới; xem `agents.md`.
 
 ## Git & commit (chi tiết ở `git.md`, `review.md`, `testing.md`)
 

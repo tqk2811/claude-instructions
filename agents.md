@@ -63,6 +63,14 @@ Agent không thấy lịch sử phiên, nên brief phải có:
 - Việc nền đụng cùng file với việc đang làm (build trong lúc sửa code, hai agent sửa cùng file) thì không chạy song song: chờ xong hoặc tách phạm vi.
 - **Why**: agent/lệnh chạy tiền cảnh khoá phiên chính tới khi xong; user không chen được yêu cầu mới hay sửa hướng giữa chừng.
 
+### User rời máy: phân bổ token theo usage
+
+- Khi user nói rời máy, đi ngủ, hay giao chạy tới một giờ hẹn: TRƯỚC khi giao đợt việc đầu, gọi tool MCP `get_usage` của server claude-usage để xem phần trăm hạn mức (phiên/tuần) đã dùng và giờ reset.
+- Từ đó chia ngân sách: số agent chạy song song, model (`opus` hay `sonnet`), độ lớn mỗi đợt, sao cho token còn đủ tới lúc user quay lại hoặc tới giờ reset. Gần cạn thì giảm số agent song song và chuyển việc đơn giản sang `sonnet`, ưu tiên việc giá trị cao (merge/test/push những gì đã xong) trước việc mới.
+- Kiểm lại `get_usage` mỗi khi sắp giao đợt việc mới và trong các lượt cron giữ cache. Chạm ngưỡng user đặt thì dừng giao việc mới, chốt phần đã xong và ghi tiến độ vào memory.
+- Server claude-usage không kết nối được thì thử gọi lại một lần; vẫn lỗi thì chạy dè dặt (ít agent, ưu tiên `sonnet`) và báo user.
+- **Why**: (2026-11-25) user muốn việc chạy qua đêm không bị cạn token giữa chừng, bỏ dở các nhánh chưa merge.
+
 ### Cron (chỉ phiên chính đặt)
 
 - **Giữ cache khi chạy lâu**: việc dài (agent/lệnh chạy nền lâu, kế hoạch nhiều đợt chạy liên tục) thì kiểm `CronList` xem đã có cron job mỗi 30 phút giữ prompt cache sống chưa; chưa có thì tạo (`CronCreate`, `recurring: true`, prompt ngắn kiểu "kiểm agent đang chạy đã báo chưa; chưa thì chỉ trả lời một dòng 'vẫn chạy'").
