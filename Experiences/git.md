@@ -294,3 +294,12 @@ Xử lý: `git config core.longpaths true` (chỉ trong bản clone) rồi `git 
 
 - Merge submodule về `master` trước rồi `git checkout master` ở repo cha: submodule bị đưa về commit mà `master` CŨ của repo cha trỏ tới, ở trạng thái detached, kể cả sau khi merge repo cha xong (`git status` báo ` M <submodule>`).
 - Cách xử lý: làm xong merge repo cha thì vào submodule `git checkout master`, rồi kiểm `git submodule status` không còn dấu `+`.
+
+## `git worktree remove --force` xoá luôn NỘI DUNG thư mục mà junction trong worktree trỏ tới (Windows)
+
+- **Triệu chứng:** sau khi gỡ worktree, các thư mục không track của repo chính (thư viện prebuilt, dữ liệu test bị `.gitignore`) chỉ còn là thư mục rỗng. Build hoặc test sau đó hỏng vì thiếu file.
+- **Nguyên nhân:** trong worktree có junction (`mklink /J`) trỏ về thư mục của repo chính để khỏi chép lại dữ liệu nặng. `git worktree remove --force` đi xuyên qua junction và xoá từng file bên trong thư mục ĐÍCH, rồi mới xoá junction.
+- **Cách tránh:** trước khi gỡ worktree, liệt kê junction (`cmd /c dir /AL /S <worktree>`, hoặc `fsutil reparsepoint query`) và gỡ chúng bằng `cmd /c rmdir <junction>` (không `/S`): lệnh này chỉ xoá liên kết. Xong mới `git worktree remove`. Khi giao agent dùng worktree, dặn nó tự gỡ junction đã tạo, hoặc dùng biến môi trường trỏ thẳng về thư mục gốc thay cho junction.
+- **Lỡ rồi:** dữ liệu đó không nằm trong git nên không khôi phục bằng git được; chạy lại script setup của project để tải/sinh lại.
+- (2026-11-17)
+- `git worktree remove` báo `fatal: working trees containing submodules cannot be moved or removed` khi trong worktree đã chạy `git submodule update --init`. Kiểm `git status --short` sạch và commit đã push (`git ls-remote`), rồi `rm -rf <path>` + `git worktree prune`.

@@ -466,3 +466,10 @@ Bootstrap không chồng được hai modal: focus trap của modal đang mở k
 phủ tự dựng thì gắn VÀO phần tử `.modal` (không phải `.modal-dialog` — nó mang `transform`, biến
 `position: fixed` của con thành fixed theo dialog), và ở `keydown` Escape phải `stopPropagation()`,
 không thì Bootstrap nhận Esc và đóng luôn modal bên dưới.
+
+## Bootstrap 5: một modal dùng chung cho hộp xác nhận, hỏi lần 2 ngay sau lần 1 thì tự trả "không đồng ý"
+
+Hộp xác nhận kiểu `xacNhan(text) -> Promise<bool>` dựng trên MỘT `bootstrap.Modal` dùng lại, resolve `false` trong `hidden.bs.modal`. Gọi lần 2 khi lần 1 vừa bấm đồng ý (modal đang mờ dần) thì `show()` vẫn bắn `show.bs.modal`, nhưng `hidden.bs.modal` của lần ĐÓNG TRƯỚC bắn sau đó và resolve `false` cho câu hỏi MỚI; hộp vẫn hiện trên màn hình nhưng bấm đồng ý không còn tác dụng.
+
+- Kiểm "đang đóng" bằng `classList.contains("show")` hay `style.display === "block"` KHÔNG tin được (log thực tế: nhánh chờ không chạy). Tự giữ cờ: `hide.bs.modal` -> true, `hidden.bs.modal` -> false; cờ bật thì chờ `hidden` (once) rồi `setTimeout(0)` mới hỏi.
+- Chỉ lộ khi máy chủ trả nhanh hơn hiệu ứng fade (test E2E chạy cả lớp đỏ, chạy riêng một bài lại xanh). Gỡ bằng cách ghi log sự kiện `show/shown/hide/hidden.bs.modal` + click vào `window.__log` rồi đọc ra từ test.
