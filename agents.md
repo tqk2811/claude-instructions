@@ -32,7 +32,13 @@ Phiên chính giữ vai **điều phối** (kế hoạch, quyết định, kết
 - **Nên giao agent**: đọc/grep/khảo sát nhiều file; sửa cơ học lặp lại trên nhiều file; chạy build/test hoặc lệnh có output dài rồi báo lỗi chính; review theo `~/.claude/review.md`.
 - **Không chia quá vụn**: việc nhỏ, đọc 1–2 file đã biết chỗ, sửa gọn một chỗ thì tự làm. Mỗi agent tốn chi phí khởi động (system prompt + brief) và phải tự dựng lại ngữ cảnh, nên chia chỉ đáng khi phần việc tự nó sẽ đọc nhiều hơn thế.
 - **Không có trần số agent**: số agent (kể cả chạy song song, kể cả `agent()` trong Workflow) KHÔNG bị giới hạn cố định; chỉ phụ thuộc hạn mức phiên 5 giờ lấy từ MCP claude-usage (`get_usage`). Trước mỗi đợt giao nhiều agent thì gọi `get_usage`:
-  - Còn nhiều: chia bao nhiêu agent cũng được, miễn mỗi agent có phần việc riêng không chồng nhau và đáng chi phí khởi động (ý ngay trên).
+  - **Giữ tốc độ đều trong phiên 5 giờ, ngân sách 90%** (10% còn lại để dự trù, không dùng). Tốc độ chuẩn = 18% mỗi giờ. Mỗi lần định giao agent thì tính: `chuẩn = 90% × (giờ đã trôi / 5)`, giờ đã trôi = 5 − `resets_in`; so với `utilization_percent`:
+    - Dùng thấp hơn chuẩn rõ rệt (vd trôi 2,5 giờ = chuẩn 45% mà mới dùng 5%): tạo agent thoải mái, song song bao nhiêu cũng được (miễn mỗi agent có phần việc riêng, đáng chi phí khởi động).
+    - Dùng xấp xỉ chuẩn (vd trôi 2,5 giờ mà đã 45%): giảm còn tối đa 1 agent chạy cùng lúc.
+    - Dùng vượt chuẩn: không tạo agent mới (để agent đang chạy làm xong), chờ thời gian đuổi kịp hoặc tới giờ reset.
+    - Chạm 90%: dừng giao việc, chốt phần đã xong; tạm ngưng + cron một lần sau giờ reset như ý dưới. VẪN GIỮ cron giữ cache 30 phút (mục "Cron" bên dưới), không xoá nó khi tạm ngưng, để lúc làm tiếp không phải ghi lại cả lịch sử.
+    - Tăng/giảm số agent theo khoảng cách tới đường chuẩn để mức dùng trải đều tới cuối phiên, không dồn cạn sớm.
+    - **Why**: (2026-11-26) user muốn số agent co giãn theo tốc độ tiêu hạn mức: chạy nhanh khi còn dư, chậm lại khi chạm tốc độ chuẩn, luôn chừa 10% dự trù.
   - Còn ít: hoặc tạo ít agent (chuyển việc đơn giản sang `sonnet`), hoặc tạm ngưng hẳn việc tạo agent; khi tạm ngưng thì BẮT BUỘC đặt cron một lần (`CronCreate`, `recurring: false`) vào vài phút sau giờ reset phiên 5 giờ để tự làm tiếp, không bỏ việc dở chờ user nhắc (cách làm ở mục "User rời máy" bên dưới).
   - Chọn tạo ít hay tạm ngưng: phần còn lại đủ cho đợt việc kế tiếp chạy trọn thì tạo ít; không đủ thì tạm ngưng + cron.
   - **Why**: (2026-11-25) user muốn số agent chỉ bị chặn bởi usage thật, không bởi một con số trần đặt sẵn.
