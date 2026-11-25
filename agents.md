@@ -36,6 +36,8 @@ Phiên chính giữ vai **điều phối** (kế hoạch, quyết định, kết
     - Dùng thấp hơn chuẩn rõ rệt (vd trôi 2,5 giờ = chuẩn 45% mà mới dùng 5%): tạo agent thoải mái, song song bao nhiêu cũng được (miễn mỗi agent có phần việc riêng, đáng chi phí khởi động).
     - Dùng xấp xỉ chuẩn (vd trôi 2,5 giờ mà đã 45%): giảm còn tối đa 1 agent chạy cùng lúc.
     - Dùng vượt chuẩn: không tạo agent mới (để agent đang chạy làm xong), chờ thời gian đuổi kịp hoặc tới giờ reset.
+    - **Tự chạy tiếp khi chuẩn đuổi kịp**: mức đã dùng không giảm nhưng mức chuẩn tăng theo giờ, nên khi đang dừng vì vượt chuẩn (hoặc đang có việc dở chờ hạn mức), cron giữ cache 30 phút KIÊM luôn việc điều nhịp: prompt của nó phải ghi rõ mỗi lần chạy gọi `get_usage`, tính lại chuẩn, và nếu đã được phép thì tự giao bước kế tiếp theo danh sách bước ghi sẵn trong prompt (không tạo trùng agent đang chạy cho cùng bước). Đừng chỉ hẹn cron một lần sau giờ reset khi chuẩn sẽ đuổi kịp trước đó.
+      - **Why**: (2026-11-26) dừng vì vượt chuẩn lúc 71% mà chỉ hẹn cron 05:07 sau reset, trong khi chuẩn đuổi kịp từ ~03:57; user hỏi sao không tự chạy tiếp.
     - Chạm 90%: dừng giao việc, chốt phần đã xong; tạm ngưng + cron một lần sau giờ reset như ý dưới. VẪN GIỮ cron giữ cache 30 phút (mục "Cron" bên dưới), không xoá nó khi tạm ngưng, để lúc làm tiếp không phải ghi lại cả lịch sử.
     - Tăng/giảm số agent theo khoảng cách tới đường chuẩn để mức dùng trải đều tới cuối phiên, không dồn cạn sớm.
     - **Why**: (2026-11-26) user muốn số agent co giãn theo tốc độ tiêu hạn mức: chạy nhanh khi còn dư, chậm lại khi chạm tốc độ chuẩn, luôn chừa 10% dự trù.
