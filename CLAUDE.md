@@ -6,6 +6,8 @@
 - Tên biến/hàm/class trong code luôn dùng tiếng Anh.
 - `Quy tắc gom phần giống nhau`: thấy nhiều bảng/class có cùng một nhóm cột hoặc chức năng giống nhau (vd nhiều bảng đều có cột nội dung soạn thảo HTML + Markdown + bảng tệp đi kèm) thì HỎI user có tách nhóm đó ra thành bảng/thành phần dùng chung không, không tự quyết. User không đồng ý tách thì ghi comment ngắn tại chỗ trong code (vd ở entity/configuration) nói rằng đã cân nhắc gom chung và user chọn giữ riêng, kèm lý do nếu có.
   - **Why**: phần giống nhau nằm rải rác nhiều nơi thì khó quản lý; comment giữ lại quyết định để lần sau không đề xuất lại.
+- `Quy tắc thư mục src`: project MỚI đặt toàn bộ code và hệ thống build (module, `gradlew`/`settings.gradle.kts`/`gradle/`, `.sln`/`.csproj`, `package.json`…) trong thư mục `src/` ở gốc repo; gốc repo chỉ giữ `docs/`, `README.md`, `.gitignore`, `.gitattributes`, CI (`.github/`) và file cấu hình repo. Project cũ có cấu trúc khác thì HỎI trước khi dời.
+  - **Why**: (2026-11-25) user muốn gốc repo gọn, tách code khỏi tài liệu.
 - **Python trên Windows chạy bằng `py`** (py launcher), vd `py - "$f" <<'EOF'`, `py -I script.py`. `python`/`python3` không có trong PATH; lỡ gặp `python: command not found` thì chạy lại bằng `py`, không bỏ sang cách khác. Chi tiết ở `Experiences/Python.md`.
 
 ## File rule cần đọc trước

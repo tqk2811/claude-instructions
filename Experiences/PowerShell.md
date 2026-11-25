@@ -340,3 +340,7 @@ Hoặc so nội dung chứ đừng so độ dài: ghi chuỗi kia ra tệp UTF-8
 `[System.IO.File]::WriteAllText(...)` rồi `diff` hai tệp. Nhớ chuẩn hoá `\r\n` và dòng trống cuối
 tệp trước khi kết luận: chuỗi lưu trong database thường đã bị trim mất `\n` cuối, nên `diff` báo
 `\ No newline at end of file` là chuyện bình thường, không phải nội dung khác nhau.
+
+## `$_` trong `catch` là lỗi, không còn là phần tử pipeline
+
+Trong `ForEach-Object { try {...} catch { ... $_.FullName ... } }`, bên trong `catch` thì `$_` bị đổi thành `ErrorRecord`, nên `$_.FullName` ra `$null`. Gán phần tử vào biến (`$f = $_`) ở đầu khối rồi dùng `$f` trong `catch`.

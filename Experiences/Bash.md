@@ -168,6 +168,9 @@
 - Viết file nguồn dài (vài trăm dòng C#/JS) bằng `cat > f <<'EOF'` có lúc trả
   `unexpected EOF while looking for matching`, dù nội dung không hề chứa dấu nháy lệch hay chuỗi `EOF`.
 - Dùng công cụ Write cho file dài; giữ heredoc cho đoạn ngắn (dưới ~50 dòng).
+- Kể cả heredoc ngắn có `<<'EOF'`: Bash tool có lúc gộp `\\` thành `\` trong thân heredoc (đã gặp: chuỗi C#
+  `@"\\.\pipe\"` ra `@"\.\pipe\"`, `'\\'` ra `'\'`, `\a` trong script Python thành ký tự BEL). Nội dung có gạch
+  chéo ngược (đường dẫn Windows, escape C/C#/Python) thì viết bằng Write rồi chạy file đó; xong grep lại chỗ có `\`.
 
 ## `perl -i` + gán `@ARGV` trong script = XOÁ TRẮNG file, không báo lỗi
 
