@@ -313,6 +313,13 @@ MyApp.Node.Services.Product/
     `ClearFieldsAsync`. Tool cho agent (MCP) thì lộ đúng hai hàm này thành `*_update` và `*_clear_fields`.
   - **Why**: (2026-11-27) mỗi nơi gọi một nghĩa của null (giữ / xoá / thay toàn bộ / cờ clear) làm service phải chiều
     từng nơi và agent gọi sai; một khuôn duy nhất thì service sạch, nơi gọi chỉ việc dịch input.
+- `Quy tắc RowVersion`: mọi entity có thể bị sửa song song (nhiều admin, chủ dữ liệu, agent/MCP, job nền) phải có cột
+  `RowVersion` (`[Timestamp]`/`IsRowVersion()`); lượt ghi so phiên bản, lệch thì trả 409 để nơi gọi tải lại, KHÔNG âm thầm
+  ghi đè. VM sửa và `*ClearFieldsRequest` mang `RowVersion`; form web gửi kèm ô ẩn và nhận lại phiên bản mới sau mỗi lệnh
+  ghi; tool cho agent cho phép bỏ trống, khi đó service so với phiên bản vừa đọc để trộn. Bỏ qua: bảng log/chỉ thêm, bảng
+  con bị thay cả danh sách dưới khoá của bảng cha. Bảng do job nền ghi thì cân nhắc riêng để job không bị 409 oan.
+  - **Why**: (2026-11-28) cập nhật từng phần = đọc, trộn, ghi cả bản; hai lượt chồng nhau thì lượt sau đè mất trường lượt
+    trước vừa sửa mà không ai biết.
 - Truy vấn trong vòng lặp: lấy MỘT lượt cả danh sách rồi tra từ điển; lọc trước vòng lặp.
 - Log bằng structured message tiếng Việt: `_logger.LogInformation("Đã xoá sản phẩm {ProductId} ({Name}).", id, name)`.
 - Mã lỗi nghiệp vụ là hằng `UPPER_SNAKE` gom ở `Common/Errors/<Group>Errors.cs` (`AuthErrors.InvalidCredentials`).
