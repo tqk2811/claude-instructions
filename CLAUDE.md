@@ -65,7 +65,8 @@ Gặp đúng tình huống thì đọc file tương ứng TRƯỚC khi làm. M�
 ## Git & commit (chi tiết ở `git.md`, `review.md`, `testing.md`)
 
 - `Quy tắc branch & commit theo từng bước`: việc sẽ đẻ ra từ 2 thay đổi trở lên thì NGAY TỪ ĐẦU tạo branch mới, làm xong việc nào build/test/commit việc đó. Được tự commit và push nhánh phụ; commit/push/merge vào `main`/`master` phải có yêu cầu rõ ràng. Repo `~/.claude` thì commit thẳng `master` nhưng mỗi lần commit/push đều cần user yêu cầu.
-- `Quy tắc review & phản biện`: chỉ đợt sửa PHỨC TẠP mới cần **một** lượt subagent review (READ-ONLY) trước commit; tiêu chí và cách làm ở `review.md`. Bỏ qua review thì nói rõ và vì sao.
+- `Quy tắc review & phản biện`: chỉ đợt sửa PHỨC TẠP mới cần **một** lượt subagent review (READ-ONLY) trước commit; tiêu chí và cách làm ở `review.md`. Review là TỰ GIÁC: tự đánh giá thấy cần thì giao review luôn, KHÔNG hỏi user có chạy không. Bỏ qua review thì nói rõ và vì sao.
+  - **Why**: (2026-11-27) user nói review là tự giác, hỏi lại chỉ tốn một lượt chờ.
 - `Quy tắc test hồi quy`: workspace đã có bộ test thì mọi lần sửa lỗi kèm test chặn lỗi cũ, phải chứng minh test từng đỏ trên code lỗi; chi tiết ở `testing.md`.
 - `Quy tắc line ending`: **dùng CRLF**.
   - File mới ghi CRLF. File đã có thì giữ kiểu sẵn có: dòng không đổi giữ nguyên, dòng thêm/sửa theo kiểu đa số của file (đối chiếu `git show HEAD:<path>`), KHÔNG ép cả file sang kiểu khác.

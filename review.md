@@ -5,6 +5,7 @@
 ## Khi nào review
 
 - Chỉ đợt sửa PHỨC TẠP mới cần review; việc nhỏ thì tự kiểm rồi commit luôn.
+- Review là tự giác: tự đánh giá thấy cần thì giao review ngay, KHÔNG hỏi user "có chạy review không"; chỉ báo là đang review (agent, model, phạm vi).
 - Đợt phức tạp thì trước `git commit` của đợt đó, toàn bộ sửa đổi (code, script, config, tài liệu) phải qua **một** lượt subagent review độc lập. Review theo ĐỢT/theo commit: KHÔNG review từng edit lẻ, cũng không dồn cả branch lại review một lần ở cuối. Không dùng git thì mốc là "trước khi báo với user là xong".
 - **Thế nào là phức tạp (CẦN review)**: đụng logic nghiệp vụ/luồng chạy; đổi kiến trúc, hợp đồng API, schema DB/migration; xoá hoặc ghi dữ liệu không hoàn tác được; quyền hạn/xác thực/tính tiền; đồng thời (async, lock, transaction); trải nhiều file hoặc nhiều tầng; hoặc chính mình thấy chưa chắc về một chỗ trong đợt.
 - **KHÔNG cần review**: sửa thuần cơ học không đổi hành vi (typo, format, đổi tên, bump version, comment); sửa nhỏ gọn trong một chỗ mà mình đã tự kiểm được bằng build/test/số đo thật; chỉnh giao diện/CSS/chữ hiển thị; và mọi lúc user nói "khỏi review". Bỏ qua thì phải NÓI RÕ trong câu trả lời là đã bỏ qua và vì sao, không im lặng: user cần biết bản này chưa có ai phản biện.
