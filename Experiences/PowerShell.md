@@ -344,3 +344,7 @@ tệp trước khi kết luận: chuỗi lưu trong database thường đã bị
 ## `$_` trong `catch` là lỗi, không còn là phần tử pipeline
 
 Trong `ForEach-Object { try {...} catch { ... $_.FullName ... } }`, bên trong `catch` thì `$_` bị đổi thành `ErrorRecord`, nên `$_.FullName` ra `$null`. Gán phần tử vào biến (`$f = $_`) ở đầu khối rồi dùng `$f` trong `catch`.
+
+## Splat `@var` với mảng một phần tử trả từ `if` bị tách từng ký tự
+
+`$range = if (...) { @("a..b") } else { @() }` rồi `exe @range`: `if` trả mảng một phần tử nên bị unroll thành CHUỖI, và splat một chuỗi thì truyền từng ký tự làm từng đối số (`a . . b`). Lỗi chỉ hiện khi nhánh có phần tử chạy, nên CI release lần đầu (chưa có tag trước, mảng rỗng) vẫn qua, lần thứ hai mới hỏng. Cách viết đúng: bọc cả `if` trong `@()`: `$range = @(if (...) { "a..b" })`.
