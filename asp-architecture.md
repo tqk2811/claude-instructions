@@ -302,6 +302,17 @@ MyApp.Node.Services.Product/
   `ApiErrorException`; middleware của host dịch `ServiceException` → HTTP.
 - Kiểm QUYỀN không nằm trong service nghiệp vụ mà ở `Rules/<X>AccessService` (Services.Common) và được
   controller gọi trước; service nhận `userId`/`roles` như tham số, doc comment ghi rõ "KHÔNG kiểm quyền ở đây".
+- `Quy tắc cập nhật & xoá trường`: service có MỘT khuôn cho mọi nơi gọi (controller web, API, MCP/agent…),
+  không có tham số hay nhánh riêng theo nơi gọi:
+  - `UpdateAsync(id, command)` cập nhật TỪNG PHẦN: trường null = giữ nguyên giá trị đang lưu. Null, chuỗi rỗng hay cờ
+    `clearX` không bao giờ mang nghĩa xoá; không có kiểu "thay toàn bộ".
+  - Xoá giá trị đi hàm riêng `ClearFieldsAsync(id, fields)`, `fields` là enum các trường được phép rỗng (trường bắt buộc
+    không có trong enum). Tên sai báo lỗi kèm danh sách hợp lệ.
+  - Trường danh sách (tag, email phụ…): truyền vào thì thay cả danh sách, `[]` = bỏ hết; null = giữ.
+  - Form web gửi đủ mọi ô: controller/page tự tách ô có giá trị → `UpdateAsync`, ô bị để trống mà đang có giá trị →
+    `ClearFieldsAsync`. Tool cho agent (MCP) thì lộ đúng hai hàm này thành `*_update` và `*_clear_fields`.
+  - **Why**: (2026-11-27) mỗi nơi gọi một nghĩa của null (giữ / xoá / thay toàn bộ / cờ clear) làm service phải chiều
+    từng nơi và agent gọi sai; một khuôn duy nhất thì service sạch, nơi gọi chỉ việc dịch input.
 - Truy vấn trong vòng lặp: lấy MỘT lượt cả danh sách rồi tra từ điển; lọc trước vòng lặp.
 - Log bằng structured message tiếng Việt: `_logger.LogInformation("Đã xoá sản phẩm {ProductId} ({Name}).", id, name)`.
 - Mã lỗi nghiệp vụ là hằng `UPPER_SNAKE` gom ở `Common/Errors/<Group>Errors.cs` (`AuthErrors.InvalidCredentials`).
